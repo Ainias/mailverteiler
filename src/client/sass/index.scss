@@ -1,0 +1,335 @@
+@import "../../../node_modules/foundation-sites/scss/foundation";
+
+//Settings nach foundation für mixins in settings
+@import "settings";
+
+//Importiere zuerst foundation vor anderen Imports, damit foundation-settings überschrieben werden
+@include foundation-everything;
+
+//From framework
+@import "../../../node_modules/cordova-sites/cordova-sites";
+
+@import "../../../node_modules/tabulator-tables/dist/css/tabulator_site.min.css";
+
+//Anderes nach Settings, damit Settings bereits angewendet werden
+@import "navbar";
+@import "toast";
+@import "form";
+@import "dialog";
+@import "swipeFragment";
+@import "themes";
+@import "ckeditor";
+@import "contextMenu";
+@import "selectPerson";
+
+.no-transition, .no-transition *{
+  transition: none;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(450deg);
+  }
+}
+
+@keyframes line {
+  0% {
+    stroke-dasharray: 2, 85.964;
+    transform: rotate(0);
+  }
+  50% {
+    stroke-dasharray: 65.973, 21.9911;
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dasharray: 2, 85.964;
+    stroke-dashoffset: -65.973;
+    transform: rotate(90deg);
+  }
+}
+
+html, body {
+  min-height: 100%;
+  width: 100%;
+  height: 100%;
+  letter-spacing: 1px;
+  overscroll-behavior: none;
+}
+
+
+#site {
+  position: relative;
+  max-height: 100%;
+  max-width: 100%;
+  //overflow: auto;
+  height: 100%;
+  width: 100%;
+  //display: inline-block;
+}
+
+.right {
+  float: right
+}
+
+.grow {
+  flex: 1;
+}
+
+.loader {
+  left: 50%;
+  top: 50%;
+  position: fixed;
+  -webkit-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+  text-align: center;
+
+  &.overlay {
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(192, 192, 192, 0.5);
+    transform: none;
+    z-index: 10000;
+
+    svg {
+      left: 50%;
+      top: 50%;
+      position: fixed;
+      -webkit-transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+  }
+
+  &.inline {
+    left: initial;
+    top: initial;
+    position: initial;
+    -webkit-transform: initial;
+    transform: initial;
+    text-align: center;
+    display: inline;
+  }
+
+  &.small .spinner {
+    transform: scale(0.5);
+  }
+
+  .spinner {
+    box-sizing: border-box;
+    //stroke: #b71c1a;
+    stroke: #000;
+    stroke-width: 3px;
+    transform-origin: 50%;
+    animation: line 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite, rotate 1.6s linear infinite;
+  }
+}
+
+.overflow-auto {
+  overflow: auto;
+}
+
+.height-100 {
+  height: 100%;
+}
+
+.hidden {
+  display: none;
+}
+
+//ViewInflater
+.injected-span {
+}
+
+.vertical-middle {
+  display: flex;
+  align-items: center;
+}
+
+.vertical-bottom {
+  display: flex;
+  align-items: end;
+}
+
+.horizontal-center {
+  display: flex;
+  justify-content: center;
+}
+
+.width-100 {
+  width: 100%;
+}
+
+@for $i from 1 through 6 {
+  h#{$i}.inline {
+    display: inline-block;
+  }
+}
+
+img.back-button {
+  cursor: pointer;
+  max-height: 1.1rem;
+  margin-right: 0.2rem;
+  margin-bottom: 0.65rem;
+}
+
+a.hidden-link {
+  color: inherit;
+}
+
+#main-content-container {
+  overflow: auto;
+  width: 100%;
+
+  #main-content {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
+//Echo-specific
+body, html {
+  font-family: Montserrat, Arial, sans-serif;
+  font-size: 18px;
+  letter-spacing: 1.2px;
+  line-height: 1.25;
+}
+
+p {
+  line-height: 1.25;
+}
+
+h1 {
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+a.link {
+  text-decoration: none;
+
+  &::before {
+    padding-right: 0.2rem;
+    vertical-align: top;
+  }
+}
+
+.place {
+  .place-img {
+    img {
+      vertical-align: top;
+      padding-top: 0.1rem;
+      padding-right: 0.1rem;
+    }
+  }
+}
+
+@each $breakpoint, $value in $margins {
+  .full-width {
+    @include breakpoint($breakpoint) {
+      margin-left: -2*$value;
+      margin-right: -2*$value;
+      width: calc(100% + #{4*$value});
+      max-width: calc(100% + #{4*$value});
+    }
+  }
+}
+
+
+.switch {
+  position: relative;
+  display: inline-block;
+  text-align: right;
+
+  @include breakpoint(small down) {
+    font-size: 0.6em;
+  }
+  @include breakpoint(smedium down) {
+    font-size: 0.7em;
+  }
+
+  &.choice {
+    text-align: center;
+    .slider {
+      background-color: black;
+      margin: 0;
+    }
+  }
+
+  input {
+    display: none;
+
+    &:checked + .slider {
+      background-color: black;
+
+      &:before {
+        transform: translateX(1.5em);
+      }
+    }
+
+    &:focus + .slider {
+      //box-shadow: 0 0 1px #2196F3;
+    }
+  }
+
+  .slider {
+    display: inline-block;
+    position: relative;
+    cursor: pointer;
+    width: 3em;
+    height: 1.5em;
+    border-radius: 1.5em;
+    background-color: #ccc;
+    transition: .4s;
+
+    &:before {
+      position: absolute;
+      content: "";
+      height: 1.1em;
+      width: 1.1em;
+      left: 0.15em;
+      bottom: 0.15em;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+  }
+
+  img, svg {
+    width: 1.4em;
+    display: inline;
+    vertical-align: initial;
+
+    path {
+      stroke-color: inherit;
+    }
+  }
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.margin-none {
+  margin: 0;
+}
+
+body, body.black {
+  a, button {
+    &.button.highlight {
+      background-color: lightgray;
+    }
+  }
+}
+
+.icon {
+  width: 32px;
+  height: 32px;
+}
+
+//Nur hier, damit PHPStorm die Klasse in der Autovervollständigung hat
+.translation {
+}

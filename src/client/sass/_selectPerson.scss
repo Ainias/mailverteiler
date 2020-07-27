@@ -1,0 +1,15 @@
+.select-person-site {
+  #navbar-fragment + .grow {
+    overflow: hidden;
+
+    #main-content {
+      max-height: 100%;
+    }
+  }
+
+  #person-table{
+    input{
+      margin: 0.1rem 0 0;
+    }
+  }
+}
