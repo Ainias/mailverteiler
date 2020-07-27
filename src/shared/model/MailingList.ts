@@ -23,4 +23,7 @@ export class MailingList extends AccessEasySyncModel {
     // }
 }
 
+//TODO change
+MailingList.ACCESS_MODIFY = true;
+
 BaseDatabase.addModel(MailingList);

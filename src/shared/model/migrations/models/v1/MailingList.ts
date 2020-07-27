@@ -23,4 +23,4 @@ export class MailingList extends AccessEasySyncModel {
     // }
 }
 
-BaseDatabase.addModel(MailingList);
+// BaseDatabase.addModel(MailingList);

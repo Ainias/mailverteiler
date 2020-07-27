@@ -1,15 +1,14 @@
 import {ModifyEntitySite} from "cordova-sites-easy-sync/dist/client/editEntitySite/ModifyEntitySite";
-
-import view from "../../html/Site/editPersonSite.html"
+import view from "../../html/Site/editListsSite.html";
 import {Person} from "../../../shared/model/Person";
 import {Helper} from "js-helper/dist/shared/Helper";
 import {DataManager} from "cordova-sites/dist/client/js/DataManager";
 import {SyncJob} from "cordova-sites-easy-sync/dist/client/SyncJob";
+import {MailingList} from "../../../shared/model/MailingList";
 
-export class EditPersonSite extends ModifyEntitySite{
-
+export class EditListSite extends ModifyEntitySite{
     constructor(siteManager) {
-        super(siteManager, view, Person);
+        super(siteManager, view, MailingList);
     }
 
     async getEntityFromParameters(constructParameters) {
@@ -18,20 +17,20 @@ export class EditPersonSite extends ModifyEntitySite{
             let modelJson = await DataManager.load(SyncJob.SYNC_PATH_PREFIX +
                 DataManager.buildQuery({
                     "queries": JSON.stringify([{
-                        model: Person.getSchemaName(),
+                        model: MailingList.getSchemaName(),
                         where: {id: constructParameters["id"]},
                     }]),
                 })
             );
 
-            let persons = await Person._fromJson(modelJson.results[0].entities);
-            if (persons.length === 1){
-                entity = persons[0];
+            let mailingLists = await MailingList._fromJson(modelJson.results[0].entities);
+            if (mailingLists.length === 1){
+                entity = mailingLists[0];
             }
         }
 
         if (Helper.isNull(entity)) {
-            entity = new Person();
+            entity = new MailingList();
         }
         return entity;
     }
