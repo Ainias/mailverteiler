@@ -14,6 +14,7 @@ export class PersonInit1000000006000 implements MigrationInterface {
 
     async up(queryRunner: QueryRunner): Promise<any> {
         if (this._isServer()) {
+            await queryRunner.query("UPDATE person SET email1 = '' WHERE email1 IS NULL");
             await queryRunner.query("ALTER TABLE person CHANGE email1 email VARCHAR(255) NOT NULL DEFAULT '';");
             await queryRunner.query("ALTER TABLE person CHANGE street1 street VARCHAR(255) DEFAULT '';");
             await queryRunner.query("ALTER TABLE person CHANGE houseno1 housenumber VARCHAR(255) DEFAULT '';");

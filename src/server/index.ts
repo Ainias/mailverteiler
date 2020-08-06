@@ -10,6 +10,7 @@ import {routes} from './routes';
 import "cordova-sites-user-management/dist/shared";
 import "../shared/model/MailingList"
 import "../shared/model/Person"
+import "../shared/model/Membership"
 
 import {UserManager} from "cordova-sites-user-management/dist/server";
 import {SetupUserManagement1000000001000} from "cordova-sites-user-management/dist/shared"
@@ -17,6 +18,7 @@ import {DeleteUserManagement1000000000000} from "cordova-sites-user-management/d
 import {MailmanApi} from "./logic/v1/MailmanApi";
 import {PersonInit1000000006000} from "../shared/model/migrations/PersonInit";
 import {MailingListInit1000000007000} from "../shared/model/migrations/MailingListInit";
+import {MembershipInit1000000008000} from "../shared/model/migrations/MembershipInit";
 
 const port = process.env.PORT || 3000;
 process.env.JWT_SECRET = process.env.JWT_SECRET || "mySecretioöqwe78034hjiodfu80ä^";
@@ -36,6 +38,7 @@ EasySyncServerDb.CONNECTION_PARAMETERS = {
         SetupUserManagement1000000001000,
         PersonInit1000000006000,
         MailingListInit1000000007000,
+        MembershipInit1000000008000,
     ],
 
     "logging": false,
@@ -86,10 +89,13 @@ app.use(function (err, req, res, next) {
 });
 
 EasySyncServerDb.getInstance()._connectionPromise.then(async () => {
-    // await setupDB();
-    app.listen(port, async() => {
-        let mailmanApi = new MailmanApi(process.env.MAILMAN_URL, process.env.MAILMAN_USER, process.env.MAILMAN_PASSWORD);
-        console.log("listening on port "+port);
+    MailmanApi.init(process.env.MAILMAN_URL, process.env.MAILMAN_USER, process.env.MAILMAN_PASSWORD);
+
+    // let api = MailmanApi.getInstance();
+    // console.log(await api.versions());
+
+    app.listen(port, async () => {
+        console.log("listening on port " + port);
     });
 });
 

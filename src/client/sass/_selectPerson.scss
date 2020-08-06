@@ -1,4 +1,4 @@
-.select-person-site {
+.select-person-site, .select-list-site {
   #navbar-fragment + .grow {
     overflow: hidden;
 
@@ -7,7 +7,7 @@
     }
   }
 
-  #person-table{
+  #person-table, #list-table{
     input{
       margin: 0.1rem 0 0;
     }

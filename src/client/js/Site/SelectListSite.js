@@ -44,10 +44,9 @@ export class SelectListSite extends MenuSite {
                     title: "Name",
                     field: "name",
                     headerFilter: true,
-                    frozen: true,
                     headerFilterPlaceholder: "..."
                 },
-                {title: "Moderators", field: "moderators", headerFilter: true, frozen: true, headerFilterPlaceholder: "..."},
+                {title: "Moderators", field: "moderators", headerFilter: true, headerFilterPlaceholder: "..."},
             ],
             ajaxParams: {
                 "queries": JSON.stringify([{

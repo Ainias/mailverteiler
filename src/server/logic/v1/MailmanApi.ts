@@ -7,10 +7,20 @@ export class MailmanApi {
     private readonly _username: string;
     private readonly _password: string;
 
+    private static _instance: MailmanApi;
+
     constructor(rootUrl: string, username: string, password: string) {
         this._rootUrl = rootUrl;
         this._username = username;
         this._password = password;
+    }
+
+    static getInstance(){
+        return this._instance;
+    }
+
+    static init(rootUrl: string, username: string, password: string){
+        this._instance = new MailmanApi(rootUrl, username, password);
     }
 
     private async _fetch(path) {
@@ -30,7 +40,7 @@ export class MailmanApi {
                     body += data;
                 });
                 res.on("end", () => {
-                    resolve(body);
+                    resolve(JSON.parse(body));
                 });
             });
             req.on("error", (e) => {
@@ -64,13 +74,13 @@ export class MailmanApi {
 
             const req = https.request(options, res => {
                 res.setEncoding("utf8");
-                console.log(res.statusCode);
+                // console.log(res.statusCode);
                 let body = "";
                 res.on("data", data => {
                     body += data;
                 });
                 res.on("end", () => {
-                    resolve(body);
+                    resolve(JSON.parse(body));
                 });
             });
             req.on("error", (e) => {
@@ -438,6 +448,4 @@ export class MailmanApi {
 
         return this._send(url, data, "PATCH");
     }
-
-    
 }

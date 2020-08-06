@@ -3,6 +3,8 @@ import {BaseDatabase} from "cordova-sites-database/dist/cordova-sites-database";
 
 export class MailingList extends AccessEasySyncModel {
 
+    static SAVE_PATH = "/maillist";
+
     name: string = "";
     moderators: any = [];
     allowEverySenderWithoutHold: boolean = false;
@@ -10,7 +12,7 @@ export class MailingList extends AccessEasySyncModel {
 
     static getColumnDefinitions() {
         let columns = super.getColumnDefinitions();
-        columns["name"] = BaseDatabase.TYPES.STRING;
+        columns["name"] = {type: BaseDatabase.TYPES.STRING, unique: true};
         columns["moderators"] = BaseDatabase.TYPES.MY_JSON;
         columns["allowEverySenderWithoutHold"] = BaseDatabase.TYPES.BOOLEAN;
         columns["allowWithoutHold"] = BaseDatabase.TYPES.MY_JSON;
@@ -23,7 +25,6 @@ export class MailingList extends AccessEasySyncModel {
     // }
 }
 
-//TODO change
-MailingList.ACCESS_MODIFY = true;
+MailingList.ACCESS_MODIFY = false;
 
 BaseDatabase.addModel(MailingList);

@@ -10,7 +10,7 @@ export class MailingList extends AccessEasySyncModel {
 
     static getColumnDefinitions() {
         let columns = super.getColumnDefinitions();
-        columns["name"] = BaseDatabase.TYPES.STRING;
+        columns["name"] = {type: BaseDatabase.TYPES.STRING, unique: true};
         columns["moderators"] = BaseDatabase.TYPES.MY_JSON;
         columns["allowEverySenderWithoutHold"] = BaseDatabase.TYPES.BOOLEAN;
         columns["allowWithoutHold"] = BaseDatabase.TYPES.MY_JSON;

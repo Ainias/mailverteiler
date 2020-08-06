@@ -1,5 +1,6 @@
 import * as express from 'express';
-import {userRoutes, syncRoutes} from "cordova-sites-user-management/dist/server";
+import {userRoutes, syncRoutes, UserManager} from "cordova-sites-user-management/dist/server";
+import {ListController} from "./controller/ListController";
 
 const routerV1 = express.Router();
 
@@ -14,5 +15,6 @@ const errorHandler = (fn, context) => {
 
 routerV1.use("/sync", syncRoutes);
 routerV1.use("/user", userRoutes);
+routerV1.post("/maillist", errorHandler(UserManager.setUserFromToken, UserManager), errorHandler(ListController.modifyList, ListController));
 
 export {routerV1};

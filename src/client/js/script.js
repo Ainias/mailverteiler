@@ -12,12 +12,10 @@ import {SetupEasySync1000000000500} from "cordova-sites-easy-sync/dist/client";
 import {EasySyncClientDb} from "cordova-sites-easy-sync/dist/client/EasySyncClientDb";
 import {NavbarFragment} from "cordova-sites/dist/client/js/Context/Menu/NavbarFragment";
 import {SelectPersonSite} from "./Site/SelectPersonSite";
-import {SyncJob} from "cordova-sites-easy-sync/dist/client/SyncJob";
-import {Person} from "../../shared/model/Person";
-import {MailingList} from "../../shared/model/MailingList";
 import {EasySyncBaseModel} from "cordova-sites-easy-sync/dist/shared/EasySyncBaseModel";
 import {PersonInit1000000006000} from "../../shared/model/migrations/PersonInit";
 import {MailingListInit1000000007000} from "../../shared/model/migrations/MailingListInit";
+import {MembershipInit1000000008000} from "../../shared/model/migrations/MembershipInit";
 
 window["JSObject"] = Object;
 // window["version"] = __VERSION__;
@@ -60,11 +58,12 @@ Object.assign(BaseDatabase.CONNECTION_OPTIONS, {
     synchronize: false,
     migrationsRun: true,
     migrations: [
-        // DeleteUserManagement1000000000000,
-        // SetupEasySync1000000000500,
-        // SetupUserManagement1000000001000,
-        // PersonInit1000000006000,
-        // MailingListInit1000000007000,
+        DeleteUserManagement1000000000000,
+        SetupEasySync1000000000500,
+        SetupUserManagement1000000001000,
+        PersonInit1000000006000,
+        MailingListInit1000000007000,
+        MembershipInit1000000008000,
     ]
 });
 
