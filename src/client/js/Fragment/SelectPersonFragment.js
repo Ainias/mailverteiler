@@ -32,7 +32,7 @@ export class SelectPersonFragment extends AbstractFragment {
 
         this._table = new Tabulator(this._personTableElem, {
             height: "100%", // set height of table (in CSS or here), this enables the Virtual DOM and improves render speed dramatically (can be any valid css height value)
-            // layout: "fitColumns", //fit columns to width of table (optional)
+            selectable: true,
             columns: [ //Define Table Columns
                 {
                     title: "Vorname",
@@ -120,9 +120,9 @@ export class SelectPersonFragment extends AbstractFragment {
                 );
                 return {last_page: (modelJson.nextOffset / 50) + 1, data: modelJson.results[0].entities};
             },
-            rowClick: async (e, row) => { //trigger an alert message when the row is clicked
+            rowDblClick: async (e, row) => { //trigger an alert message when the row is clicked
                 if (typeof this._onRowClickedListener === "function") {
-                    await this._onRowClickedListener(e, row);
+                    await this._onRowClickedListener(e, row, this._table);
                 }
             },
             // rowContext: async (e, row) => {

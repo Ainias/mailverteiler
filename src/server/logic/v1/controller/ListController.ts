@@ -3,6 +3,7 @@ import {MailmanApi} from "../MailmanApi";
 import {Person} from "../../../../shared/model/Person";
 import {Helper} from "js-helper/dist/shared/Helper";
 import {In, Not} from "typeorm/index";
+import {EasySyncServerDb} from "cordova-sites-easy-sync/dist/server/EasySyncServerDb";
 
 export class ListController extends SyncController {
 
@@ -142,6 +143,33 @@ export class ListController extends SyncController {
         return res.json({});
     }
 
+    static async deletePersons(req, res) {
+        let personToDeleteIds = req.body.personIds;
+        let persons = await Person.findByIds(personToDeleteIds);
+
+        let api = MailmanApi.getInstance();
+        await Helper.asyncForEach(persons, async person => {
+            if (person.mailmanId) {
+                await api.deleteUser(person.mailmanId);
+            }
+        }, true);
+
+        let db: EasySyncServerDb = await EasySyncServerDb.getInstance();
+        db.deleteEntity(persons, Person, true);
+        return res.json({});
+    }
+
+    static async deleteLists(req, res) {
+        let listsToDelete = req.body.lists;
+
+        let api = MailmanApi.getInstance();
+        let listDeletionResult = await Helper.asyncForEach(listsToDelete, async list => {
+            return await api.deleteList(list);
+        }, true);
+
+        return res.json(listDeletionResult);
+    }
+
     static async getLists(req, res) {
         //TODO check rights
 
@@ -231,8 +259,7 @@ export class ListController extends SyncController {
             return res.json({});
         } else if (membership) {
             return res.json(membership);
-        }
-        else {
+        } else {
             return res.json({error: true})
         }
     }

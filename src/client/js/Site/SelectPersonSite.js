@@ -7,6 +7,8 @@ import {StartSiteMenuAction} from "cordova-sites/dist/client/js/Context/Menu/Men
 import {SelectListSite} from "./SelectListSite";
 import {Toast} from "cordova-sites/dist/client/js/Toast/Toast";
 import {SelectPersonFragment} from "../Fragment/SelectPersonFragment";
+import {ConfirmDialog} from "cordova-sites/dist/client/js/Dialog/ConfirmDialog";
+import {DataManager} from "cordova-sites/dist/client/js/DataManager";
 
 export class SelectPersonSite extends MenuSite {
     constructor(siteManager) {
@@ -19,7 +21,31 @@ export class SelectPersonSite extends MenuSite {
             fragment.addData([res]);
             new Toast("modified entry").show();
         })
+
+        fragment.addRowContextAction({
+            "label": "Delete",
+            "action": async (e, row) => {
+                let rows = row.getTable().getSelectedRows();
+                if (rows.length === 0) {
+                    rows = [row];
+                }
+                if (await this.deletePersons(rows.map(r => r.getData()))) {
+                    rows.forEach(r => r.delete());
+                }
+            }
+        })
+
         this._fragment = fragment;
+    }
+
+    async deletePersons(persons) {
+        if (await new ConfirmDialog("Are you sure to delete these persons? They will be gone forever! (That's a long time!)", "Delete selected persons?").show()) {
+            this.showLoadingSymbol();
+            await DataManager.send("deletePersons", {personIds: persons.map(p => p.id)});
+            this.removeLoadingSymbol();
+            return true;
+        }
+        return false;
     }
 
     onViewLoaded() {

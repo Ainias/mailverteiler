@@ -12,6 +12,7 @@ import {EditListSite} from "./EditListSite";
 import {Toast} from "cordova-sites/dist/client/js/Toast/Toast";
 import {App} from "cordova-sites/dist/client/js/App";
 import {Helper} from "js-helper/dist/shared/Helper";
+import {ConfirmDialog} from "cordova-sites/dist/client/js/Dialog/ConfirmDialog";
 
 export class SelectListSite extends MenuSite {
     constructor(siteManager) {
@@ -30,6 +31,17 @@ export class SelectListSite extends MenuSite {
         return navbar;
     }
 
+    async deleteLists(rows){
+        if (await new ConfirmDialog("Are you sure to delete these lists? They will be gone forever! (That's a long time!)", "Delete selected lists?").show()) {
+            this.showLoadingSymbol();
+            await DataManager.send("deleteLists", {lists: rows.map(r => r.getData().list_id)});
+            rows.forEach(r => r.delete());
+            this.removeLoadingSymbol();
+            return true;
+        }
+        return false;
+    }
+
     async onViewLoaded() {
         let res = super.onViewLoaded();
 
@@ -41,6 +53,7 @@ export class SelectListSite extends MenuSite {
             height: "100%", // set height of table (in CSS or here), this enables the Virtual DOM and improves render speed dramatically (can be any valid css height value)
             // layout: "fitColumns", //fit columns to width of table (optional)
             index: "list_id",
+            selectable: true,
             columns: [ //Define Table Columns
                 {
                     title: "Name",
@@ -72,12 +85,22 @@ export class SelectListSite extends MenuSite {
                 let data = Helper.nonNull(modelJson.entries, []);
                 return {last_page: (modelJson.total_size / 50) + 1, data: data};
             },
-            rowClick: async (e, row) => { //trigger an alert message when the row is clicked
+            rowDblClick: async (e, row) => { //trigger an alert message when the row is clicked
                 let id = row._row.data.list_id;
                 let res = await this.startSite(EditListSite, {id: id});
                 this._table.updateOrAddData([res]);
                 new Toast("modified entry").show();
             },
+            rowContextMenu: [{
+                "label":"delete",
+                "action":async (e, row) => {
+                    let rows = this._table.getSelectedRows();
+                    if (rows.length === 0){
+                        rows = [row];
+                    }
+                    await this.deleteLists(rows);
+                }
+            }]
         })
 
         // window.addEventListener("resize", () => {

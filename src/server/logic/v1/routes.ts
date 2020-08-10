@@ -24,5 +24,7 @@ routerV1.post("/addMember", errorHandler(UserManager.setUserFromToken, UserManag
 routerV1.post("/leaveList", errorHandler(UserManager.setUserFromToken, UserManager), errorHandler(ListController.leaveList, ListController));
 routerV1.get("/memberships", errorHandler(UserManager.setUserFromToken, UserManager), errorHandler(ListController.getMemberships, ListController));
 routerV1.get("/persons", errorHandler(UserManager.setUserFromToken, UserManager), errorHandler(ListController.getPersons, ListController));
+routerV1.post("/deletePersons", errorHandler(UserManager.setUserFromToken, UserManager), errorHandler(ListController.deletePersons, ListController));
+routerV1.post("/deleteLists", errorHandler(UserManager.setUserFromToken, UserManager), errorHandler(ListController.deleteLists, ListController));
 
 export {routerV1};

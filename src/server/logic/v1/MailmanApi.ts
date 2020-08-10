@@ -309,6 +309,10 @@ export class MailmanApi {
         return this._send("users", data);
     }
 
+    async deleteUser(emailOrId){
+        return this._send("users/"+emailOrId, {}, "DELETE");
+    }
+
     async updateUser(idOrEmail, updateField, updateValue) {
         let url = "users/" + idOrEmail;
         let data = {};
