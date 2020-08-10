@@ -3,36 +3,37 @@
         <br/>
         <br/>
         <br/>
-        <form class="entity-form">
+        <form id="list-form" class="entity-form">
             <div class="grid-x">
                 <label class="columns small-12">
-                    <input type="text" name='name' required>
+                    <input type="text" name='display_name' required>
                     <span class="translation">Name</span>
                 </label>
             </div>
             <div class="grid-x">
                 <label class="columns small-12">
-                    <input type="text" name='moderators' required>
-                    <span class="translation">Moderators</span>
+                    <input type="text" name='description'>
+                    <span class="translation">description</span>
                 </label>
             </div>
             <div class="grid-x">
                 <label class="columns small-12">
-                    <input type="checkbox" name='allowEverySenderWithoutHold' value="1">
-                    <span class="translation">Allow every sender without hold</span>
+                    <input type="text" name='subject_prefix'>
+                    <span class="translation">subject_prefix</span>
                 </label>
             </div>
-            <div class="grid-x">
-                <label class="columns small-12">
-                    <input type="text" name='allowWithoutHold'>
-                    <span class="translation">allow without hold</span>
-                </label>
-            </div>
-
             <div class="grid-x">
                 <button class="translation button">send</button>
             </div>
         </form>
     </section>
-
+    <section id = "owner-section">
+        <h3 class="translation">owners</h3>
+    </section>
+    <section id = "member-section">
+        <h3 class="translation">members</h3>
+    </section>
+    <section id = "persons-section">
+        <h3 class="translation">non-members</h3>
+    </section>
 </article>

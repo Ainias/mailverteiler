@@ -5,11 +5,41 @@ import {Person} from "../../../shared/model/Person";
 import {Helper} from "js-helper/dist/shared/Helper";
 import {DataManager} from "cordova-sites/dist/client/js/DataManager";
 import {SyncJob} from "cordova-sites-easy-sync/dist/client/SyncJob";
+import {ViewHelper} from "js-helper/dist/client/ViewHelper";
 
-export class EditPersonSite extends ModifyEntitySite{
+export class EditPersonSite extends ModifyEntitySite {
 
     constructor(siteManager) {
         super(siteManager, view, Person);
+    }
+
+    async onViewLoaded() {
+        let res = super.onViewLoaded();
+
+        this._membershipContainer = this.findBy("#membership-container");
+        this._membershipTemplate = this.findBy("#membership-template");
+
+        this._membershipTemplate.removeAttribute("id");
+        this._membershipTemplate.remove();
+
+        await this.addMembershipSelections();
+
+        return res;
+    }
+
+    async addMembershipSelections() {
+        let lists = await DataManager.load("lists");
+
+        ViewHelper.removeAllChildren(this._membershipContainer);
+        if (lists && lists.entries) {
+            lists.entries.forEach(entry => {
+                let elem = this._membershipTemplate.cloneNode(true);
+                elem.querySelector(".membership-name").innerText = entry.list_name;
+                elem.querySelector(".membership-checkbox").name = "list-"+entry.list_id;
+
+                this._membershipContainer.appendChild(elem);
+            });
+        }
     }
 
     async getEntityFromParameters(constructParameters) {
@@ -25,7 +55,7 @@ export class EditPersonSite extends ModifyEntitySite{
             );
 
             let persons = await Person._fromJson(modelJson.results[0].entities);
-            if (persons.length === 1){
+            if (persons.length === 1) {
                 entity = persons[0];
             }
         }
@@ -33,8 +63,44 @@ export class EditPersonSite extends ModifyEntitySite{
         if (Helper.isNull(entity)) {
             entity = new Person();
         }
+
+        this._memberships = await DataManager.load("memberships"+DataManager.buildQuery({"email": entity.email}));
+
         return entity;
     }
+
+    async save(values){
+        await this.hydrate(values, this._entity);
+
+        let memberships = []
+        Object.keys(values).forEach(key => {
+            if (key.startsWith("list-")){
+                memberships.push(key.substr(5));
+            }
+        })
+
+        let personData = this._entity.toJSON()
+
+        let data = {"person": personData, "memberships": memberships};
+        let res = await DataManager.send(Person.SAVE_PATH, data);
+        if (res.success === false){
+            throw new Error(data.errors);
+        }
+        // await this._entity.save();
+    }
+
+    async hydrate(values, entity){
+        return super.hydrate(values, entity)
+    };
+    async dehydrate(entity){
+        let values = await super.dehydrate(entity);
+        if (this._memberships && this._memberships.entries){
+            this._memberships.entries.forEach(entry => {
+                values["list-"+entry.list_id] = "1";
+            });
+        }
+        return values;
+    };
 
     saveListener() {
         let values = this.dehydrate(this._entity);

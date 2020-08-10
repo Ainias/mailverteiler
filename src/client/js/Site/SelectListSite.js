@@ -7,10 +7,11 @@ import * as Tabulator from "tabulator-tables";
 import {DateHelper} from "js-helper/dist/shared/DateHelper";
 import {Person} from "../../../shared/model/Person";
 import {DataManager} from "cordova-sites/dist/client/js/DataManager";
-import {MailingList} from "../../../shared/model/MailingList";
 import {SyncJob} from "cordova-sites-easy-sync/dist/client/SyncJob";
 import {EditListSite} from "./EditListSite";
 import {Toast} from "cordova-sites/dist/client/js/Toast/Toast";
+import {App} from "cordova-sites/dist/client/js/App";
+import {Helper} from "js-helper/dist/shared/Helper";
 
 export class SelectListSite extends MenuSite {
     constructor(siteManager) {
@@ -29,7 +30,7 @@ export class SelectListSite extends MenuSite {
         return navbar;
     }
 
-    onViewLoaded() {
+    async onViewLoaded() {
         let res = super.onViewLoaded();
 
         this._view.classList.add("select-list-site")
@@ -39,84 +40,54 @@ export class SelectListSite extends MenuSite {
         this._table = new Tabulator(this._listTableElem, {
             height: "100%", // set height of table (in CSS or here), this enables the Virtual DOM and improves render speed dramatically (can be any valid css height value)
             // layout: "fitColumns", //fit columns to width of table (optional)
+            index: "list_id",
             columns: [ //Define Table Columns
                 {
                     title: "Name",
-                    field: "name",
+                    field: "display_name",
                     headerFilter: true,
                     headerFilterPlaceholder: "..."
                 },
-                {title: "Moderators", field: "moderators", headerFilter: true, headerFilterPlaceholder: "..."},
+                {
+                    title: "Address",
+                    field: "fqdn_listname",
+                    headerFilter: true,
+                    headerFilterPlaceholder: "..."
+                },
+                {title: "Description", field: "description", headerFilter: true, headerFilterPlaceholder: "..."},
+                {title: "Members", field: "member_count", headerFilter: true, headerFilterPlaceholder: "..."},
             ],
-            ajaxParams: {
-                "queries": JSON.stringify([{
-                    model: MailingList.getSchemaName(),
-                }]),
-            },
-            ajaxURL: DataManager.basePath(SyncJob.SYNC_PATH_PREFIX),
+            ajaxURL: DataManager.basePath("/lists"),
             ajaxProgressiveLoad: "scroll",
             ajaxProgressiveLoadScrollMargin: 350,
-            ajaxSorting: true,
-            ajaxFiltering: true,
+            // ajaxSorting: true,
+            // ajaxFiltering: true,
             ajaxRequestFunc: async (url, config, params) => {
-                let orderBy = {
-                    "name": "ASC",
-                    "moderators": "ASC",
-                }
-
-                if (params.sorters && params.sorters.length > 0) {
-                    orderBy = {};
-                    params.sorters.forEach(s => orderBy[s.field] = s.dir.toUpperCase());
-                }
-
-                let filter = {};
-                if (params.filters && params.filters.length > 0) {
-                    params.filters.forEach(f => {
-                        if (f.type === "like") {
-                            filter[f.field] = {
-                                type: "like",
-                                value: "%" + f.value + "%"
-                            }
-                        }
-                    })
-                }
-
-                let modelJson = await DataManager.load(SyncJob.SYNC_PATH_PREFIX +
+                let modelJson = await DataManager.load("/lists" +
                     DataManager.buildQuery({
-                        "queries": JSON.stringify([{
-                            model: MailingList.getSchemaName(),
-                            where: filter,
-                            orderBy: orderBy
-                        }]),
-                        "offset": (params.page - 1) * 50
+                        "page": params.page,
+                        "count": 50,
                     })
                 );
-                console.log("data", modelJson);
-                return {last_page: (modelJson.nextOffset / 50) + 1, data: modelJson.results[0].entities};
+                let data = Helper.nonNull(modelJson.entries, []);
+                return {last_page: (modelJson.total_size / 50) + 1, data: data};
             },
             rowClick: async (e, row) => { //trigger an alert message when the row is clicked
-                let id = row._row.data.id;
+                let id = row._row.data.list_id;
                 let res = await this.startSite(EditListSite, {id: id});
                 this._table.updateOrAddData([res]);
                 new Toast("modified entry").show();
             },
         })
 
-        window.addEventListener("resize", () => {
-            this._updateTableHeight();
-        })
+        // window.addEventListener("resize", () => {
+        //     this._updateTableHeight();
+        // })
 
         return res;
-    }
-
-    onStart(pauseArguments) {
-        let res = super.onStart(pauseArguments);
-        this._updateTableHeight();
-        return res;
-    }
-
-    _updateTableHeight() {
-        // let height = parseInt(window.getComputedStyle(this._personTableElem.parentElement).getPropertyValue("height"));
-        // this._personTableElem.style.height = (height-1)+"px";
     }
 }
+
+App.addInitialization((app) => {
+    app.addDeepLink("lists", SelectListSite);
+})

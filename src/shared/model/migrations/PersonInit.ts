@@ -27,6 +27,7 @@ export class PersonInit1000000006000 implements MigrationInterface {
             await queryRunner.query("ALTER TABLE person ADD COLUMN updatedAt DATETIME NOT NULL DEFAULT NOW()");
             await queryRunner.query("ALTER TABLE person ADD COLUMN version INTEGER NOT NULL DEFAULT 0");
             await queryRunner.query("ALTER TABLE person ADD COLUMN deleted SMALLINT(1) NOT NULL DEFAULT 0");
+            await queryRunner.query("ALTER TABLE person ADD COLUMN mailmanId VARCHAR(255) DEFAULT NULL");
         }
         else {
             let table = MigrationHelper.createTableFromModelClass(Person);

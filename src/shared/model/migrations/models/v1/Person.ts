@@ -3,6 +3,7 @@ import {BaseDatabase} from "cordova-sites-database/dist/cordova-sites-database";
 
 export class Person extends AccessEasySyncModel {
 
+    mailmanId: string = null;
     surname: string = "";
     firstname: string = "";
     email: string = "";
@@ -17,6 +18,10 @@ export class Person extends AccessEasySyncModel {
 
     static getColumnDefinitions() {
         let columns = super.getColumnDefinitions();
+        columns["mailmanId"] = {
+            type: BaseDatabase.TYPES.STRING,
+            nullable: true,
+        };
         columns["surname"] = {
             type: BaseDatabase.TYPES.STRING,
         };
@@ -25,6 +30,7 @@ export class Person extends AccessEasySyncModel {
         };
         columns["email"] = {
             type: BaseDatabase.TYPES.STRING,
+            unique: true,
         };
         columns["street"] = {
             type: BaseDatabase.TYPES.STRING,
@@ -60,11 +66,5 @@ export class Person extends AccessEasySyncModel {
         };
         return columns;
     }
-
-    // static getRelationDefinitions(){
-    //     let relations = super.getRelationDefinitions();
-    //     return relations;
-    // }
 }
-
-// BaseDatabase.addModel(Person);
+Person.ACCESS_MODIFY = false;
