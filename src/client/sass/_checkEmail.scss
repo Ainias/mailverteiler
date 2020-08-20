@@ -1,0 +1,21 @@
+#email-container {
+  $emailBorderColor: #dbdbdb;
+
+  .email {
+    border: 1px solid $emailBorderColor;
+    border-radius: 2px;
+    margin: 0.4rem;
+    padding: 0.2rem;
+
+    .email-actions {
+      border-top: 1px solid $emailBorderColor;
+      padding-top: 0.2rem;
+      @include breakpoint(large) {
+        border-left: 1px solid $emailBorderColor;
+        padding-left: 0.2rem;
+        padding-top: 0;
+        border-top: 0;
+      }
+    }
+  }
+}

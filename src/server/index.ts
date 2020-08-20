@@ -15,6 +15,9 @@ import {SetupUserManagement1000000001000} from "cordova-sites-user-management/di
 import {DeleteUserManagement1000000000000} from "cordova-sites-user-management/dist/shared"
 import {MailmanApi} from "./logic/v1/MailmanApi";
 import {PersonInit1000000006000} from "../shared/model/migrations/PersonInit";
+import {MailingListInit1000000007000} from "../shared/model/migrations/MailingListInit";
+import {Data1000000005000} from "./migrations/Data";
+import {Data1000000005001} from "./migrations/Data2";
 
 const port = process.env.PORT || 3000;
 process.env.JWT_SECRET = process.env.JWT_SECRET || "mySecretioöqwe78034hjiodfu80ä^";
@@ -32,7 +35,10 @@ EasySyncServerDb.CONNECTION_PARAMETERS = {
     "migrations": [
         DeleteUserManagement1000000000000,
         SetupUserManagement1000000001000,
+        Data1000000005000,
+        Data1000000005001,
         PersonInit1000000006000,
+        MailingListInit1000000007000,
     ],
 
     "logging": false,

@@ -9,6 +9,8 @@ import {Toast} from "cordova-sites/dist/client/js/Toast/Toast";
 import {SelectPersonFragment} from "../Fragment/SelectPersonFragment";
 import {ConfirmDialog} from "cordova-sites/dist/client/js/Dialog/ConfirmDialog";
 import {DataManager} from "cordova-sites/dist/client/js/DataManager";
+import {UserSite} from "cordova-sites-user-management/dist/client/js/Context/UserSite";
+import {RIGHTS} from "../../../shared/RIGHTS";
 
 export class SelectPersonSite extends MenuSite {
     constructor(siteManager) {
@@ -34,6 +36,8 @@ export class SelectPersonSite extends MenuSite {
                 }
             }
         })
+
+        this.addDelegate(new UserSite(this, RIGHTS.VIEW_USER, false));
 
         this._fragment = fragment;
     }
@@ -61,6 +65,25 @@ export class SelectPersonSite extends MenuSite {
                 this._fragment.addData([res]);
             }
             new Toast("added entry").show();
+        }));
+        navbar.addAction(new MenuAction("synchronise", async () => {
+            try {
+                this.showLoadingSymbol();
+                let res = {"askAgain": false};
+                do {
+                    res = await DataManager.load("synchronise");
+                    console.log("synchronize-update", res);
+                } while (res.askAgain);
+                if (res.success) {
+                    new Toast("synchronised!").show();
+                } else {
+                    new Toast(res.message).show();
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                this.removeLoadingSymbol();
+            }
         }));
         navbar.addAction(new StartSiteMenuAction("lists", SelectListSite));
         return navbar;

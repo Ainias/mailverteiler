@@ -2,25 +2,19 @@ import {SyncController} from "cordova-sites-user-management/dist/server/v1/contr
 import {MailmanApi} from "../MailmanApi";
 import {Person} from "../../../../shared/model/Person";
 import {Helper} from "js-helper/dist/shared/Helper";
-import {In, Not} from "typeorm/index";
+import {In, IsNull, Not} from "typeorm/index";
 import {EasySyncServerDb} from "cordova-sites-easy-sync/dist/server/EasySyncServerDb";
+import {MailingList} from "../../../../shared/model/MailingList";
 
 export class ListController extends SyncController {
 
-    static async modifyPerson(req, res) {
-        //TODO Check rights
-        let modelData = req.body.person;
-
-        modelData.email = modelData.email.toLowerCase();
-        let person: any = await this._doModifyModel(Person, modelData);
-
-        let mail = person.email;
+    static async _addOrUpdatePerson(mailmanId, mail) {
 
         let api = MailmanApi.getInstance();
 
         let personData = null;
-        if (person.mailmanId !== null) {
-            personData = await api.getUsers(person.mailmanId);
+        if (mailmanId !== null) {
+            personData = await api.getUsers(mailmanId);
         }
 
         if (personData === null || personData.title && personData.title === "404 Not Found") {
@@ -33,18 +27,31 @@ export class ListController extends SyncController {
 
             personData = await api.getUsers(mail);
         } else {
-            let addresses: any = await api.getUserAddresses(person.mailmanId);
+            let addresses: any = await api.getUserAddresses(mailmanId);
             if (addresses.total_size != 1 || addresses.entries[0].email !== mail) {
                 if (addresses.entries) {
                     await Helper.asyncForEach(addresses.entries, async addr => {
                         await api.deleteAddress(addr.email);
                     }, true);
                 }
-                await api.addUserAddresses(person.mailmanId, mail);
+                await api.addUserAddresses(mailmanId, mail);
                 await api.verifyAddress(mail);
                 await api.setPreferredAddress(mail);
             }
         }
+        return personData;
+    }
+
+    static async modifyPerson(req, res) {
+        //TODO Check rights
+        let modelData = req.body.person;
+
+        modelData.email = modelData.email.toLowerCase();
+        let person: any = await this._doModifyModel(Person, modelData);
+
+        let api = MailmanApi.getInstance();
+
+        let personData = await this._addOrUpdatePerson(person.mailmanId, person.email);
 
         person.mailmanId = personData.user_id;
         await person.save();
@@ -159,17 +166,6 @@ export class ListController extends SyncController {
         return res.json({});
     }
 
-    static async deleteLists(req, res) {
-        let listsToDelete = req.body.lists;
-
-        let api = MailmanApi.getInstance();
-        let listDeletionResult = await Helper.asyncForEach(listsToDelete, async list => {
-            return await api.deleteList(list);
-        }, true);
-
-        return res.json(listDeletionResult);
-    }
-
     static async getLists(req, res) {
         //TODO check rights
 
@@ -177,6 +173,10 @@ export class ListController extends SyncController {
         let api = MailmanApi.getInstance();
 
         let lists: any = await api.getLists(listName, req.query.page, req.query.count);
+        if (listName && lists) {
+            let config: any = await api.getListConfig(listName);
+            lists = Object.assign(config, lists);
+        }
 
         return res.json(lists)
     }
@@ -192,8 +192,12 @@ export class ListController extends SyncController {
         let description = req.body.description;
         let subjectPrefix = req.body.subject_prefix;
 
+        let defaultMemberAction = req.body.default_member_action;
+        let defaultNonmemberAction = req.body.default_nonmember_action;
+
         let api = MailmanApi.getInstance();
         let lists: any = null;
+        let listModel = null;
         if (listId) {
             lists = await api.getLists(listId);
         }
@@ -212,11 +216,55 @@ export class ListController extends SyncController {
             if (list.subject_prefix !== subjectPrefix) {
                 await api.updateList(list.list_id, "subject_prefix", subjectPrefix);
             }
+            if (list.default_member_action !== defaultMemberAction) {
+                await api.updateList(list.list_id, "default_member_action", defaultMemberAction);
+            }
+            if (list.default_nonmember_action !== defaultNonmemberAction) {
+                await api.updateList(list.list_id, "default_nonmember_action", defaultNonmemberAction);
+            }
+            if (typeof req.body.pw === "string" && req.body.pw.length >= 8) {
+                listModel = await MailingList.findOne({"mailmanId": listId});
+                if (listModel === null) {
+                    listModel = new MailingList();
+                    listModel.mailmanId = listId;
+                }
+                listModel.password = MailingList.hashPassword(listModel, req.body.pw);
+                listModel.save();
+            }
         } else {
-            await api.addList(mail, description, subjectPrefix);
+            list = await api.addList(mail, {
+                "description": description,
+                "subject_prefix": subjectPrefix,
+                "default_member_action": defaultMemberAction,
+                "default_nonmember_action": defaultNonmemberAction,
+            });
+            if (list === undefined) {
+                list = await api.getLists(mail);
+                if (typeof req.body.pw === "string" && req.body.pw.length >= 8) {
+                    listId = list.list_id;
+                    listModel = await MailingList.findOne({"mailmanId": listId});
+                    if (listModel === null) {
+                        listModel = new MailingList();
+                        listModel.mailmanId = listId;
+                    }
+                    listModel.password = MailingList.hashPassword(listModel, req.body.pw);
+                    listModel.save();
+                }
+            }
         }
 
         return res.json(list)
+    }
+
+    static async deleteLists(req, res) {
+        let listsToDelete = req.body.lists;
+
+        let api = MailmanApi.getInstance();
+        let listDeletionResult = await Helper.asyncForEach(listsToDelete, async list => {
+            return await api.deleteList(list);
+        }, true);
+
+        return res.json(listDeletionResult);
     }
 
     static async getMemberships(req, res) {
@@ -244,6 +292,51 @@ export class ListController extends SyncController {
         }
     }
 
+    static async getHoldMail(req, res) {
+        let listId = req.body.list;
+        let listPassword = req.body.pw + "";
+
+        let listModel = await MailingList.findOne({"mailmanId": listId});
+        if (listModel === null) {
+            return res.json({});
+        }
+
+        let hashedPassword = MailingList.hashPassword(listModel, listPassword);
+        if (hashedPassword !== listModel.password) {
+            return res.json({});
+        }
+
+        let api = MailmanApi.getInstance();
+        let mails = await api.getHoldMessages(listId);
+
+        return res.json(mails);
+    }
+
+    static async handleMessage(req, res) {
+        let listId = req.body.list;
+        let request = req.body.request;
+        let listPassword = req.body.pw + "";
+        let action = req.body.action;
+
+        let listModel = await MailingList.findOne({"mailmanId": listId});
+        if (listModel === null) {
+            return res.json({});
+        }
+
+        let hashedPassword = MailingList.hashPassword(listModel, listPassword);
+        if (hashedPassword !== listModel.password) {
+            return res.json({});
+        }
+
+        let api = MailmanApi.getInstance();
+        let result = await api.handleMessage(listId, request, action)
+        if (result === undefined) {
+            return res.json({success: true});
+        } else {
+            return res.json(result);
+        }
+    }
+
     static async leaveList(req, res) {
 
         let list_id = req.body.list_id;
@@ -262,5 +355,55 @@ export class ListController extends SyncController {
         } else {
             return res.json({error: true})
         }
+    }
+
+    static async synchronise(req, res) {
+        let api = MailmanApi.getInstance();
+        let mailmanAddresses: any = await api.getAddresses();
+
+        const MAX_ENTRIES = 10;
+
+        //From Mailman to program
+        if (mailmanAddresses.entries) {
+            let mails = [];
+            mailmanAddresses.entries.forEach(entry => {
+                if (entry.user) {
+                    mails.push(entry.email)
+                }
+            });
+            let personsOfAddresses = await Person.find({"email": In(mails)});
+
+            let personMails = [];
+            await Helper.asyncForEach(personsOfAddresses, async person => {
+                if (!person.mailmanId) {
+                    let personData: any = await api.getUsers(person.email);
+                    if (personData.user_id){
+                        person.mailmanId = personData.user_id;
+                        person.save();
+                    }
+                }
+                personMails.push(person.email);
+            }, true)
+
+            //TODO filter and delete adresses that are not there
+            let oldMails = mails.filter(email => personMails.indexOf(email) === -1);
+            console.log("oldMails", oldMails);
+            await Helper.asyncForEach(oldMails, async email => {
+                await api.deleteUser(email);
+            })
+        }
+
+        //From program to mailman
+        let persons = await Person.find({"mailmanId": IsNull()}, undefined, MAX_ENTRIES)
+        await Helper.asyncForEach(persons, async person => {
+            await this._addOrUpdatePerson(person.mailmanId, person.email);
+        });
+
+        let result = {"success": true}
+        if (persons.length === MAX_ENTRIES){
+            result["askAgain"] = true;
+        }
+
+        return res.json(result);
     }
 }

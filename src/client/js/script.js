@@ -15,6 +15,11 @@ import {SelectPersonSite} from "./Site/SelectPersonSite";
 import {EasySyncBaseModel} from "cordova-sites-easy-sync/dist/shared/EasySyncBaseModel";
 import {PersonInit1000000006000} from "../../shared/model/migrations/PersonInit";
 
+import "cordova-sites-user-management/dist/client"
+
+import {CheckMailSite} from "./Site/CheckMailSite";
+import {UserManager} from "cordova-sites-user-management/dist/client/js/UserManager";
+
 window["JSObject"] = Object;
 // window["version"] = __VERSION__;
 
@@ -33,6 +38,8 @@ App.addInitialization(async () => {
 
     //Setting Title
     NavbarFragment.title = "Mail";
+
+    await UserManager.getInstance().getMe().catch(e => console.error(e));
 
     // let syncJob = new SyncJob();
     //
@@ -57,8 +64,8 @@ Object.assign(BaseDatabase.CONNECTION_OPTIONS, {
     migrationsRun: true,
     migrations: [
         DeleteUserManagement1000000000000,
-        SetupEasySync1000000000500,
         SetupUserManagement1000000001000,
+        SetupEasySync1000000000500,
         PersonInit1000000006000,
     ]
 });

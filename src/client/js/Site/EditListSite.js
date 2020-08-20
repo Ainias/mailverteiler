@@ -4,6 +4,8 @@ import {MenuSite} from "cordova-sites/dist/client/js/Context/MenuSite";
 import {Form} from "cordova-sites";
 import {SelectPersonFragment} from "../Fragment/SelectPersonFragment";
 import {JsonHelper} from "js-helper/dist/shared/JsonHelper";
+import {RIGHTS} from "../../../shared/RIGHTS";
+import {UserSite} from "cordova-sites-user-management/dist/client/js/Context/UserSite";
 
 export class EditListSite extends MenuSite {
     constructor(siteManager) {
@@ -15,6 +17,8 @@ export class EditListSite extends MenuSite {
         this.addFragment("#owner-section", this._ownerFragment);
         this.addFragment("#member-section", this._memberFragment);
         this.addFragment("#persons-section", this._personFragment);
+
+        this.addDelegate(new UserSite(this, RIGHTS.EDIT_LIST, false));
     }
 
     async onConstruct(constructParameters) {
@@ -114,11 +118,16 @@ export class EditListSite extends MenuSite {
             this._list["description"] = values["description"];
             this._list["display_name"] = values["display_name"];
             this._list["subject_prefix"] = values["subject_prefix"];
+            if (values["pw"]){
+                this._list["pw"] = values["pw"];
+            }
+            this._list["default_member_action"] = values["default_member_action"];
+            this._list["default_nonmember_action"] = values["default_nonmember_action"];
 
             let res = await DataManager.send("list", this._list);
-            console.log("done", res);
             await this.finish(res);
         });
+        // console.log("list", this._list);
         await form.setValues(this._list);
 
         return res;

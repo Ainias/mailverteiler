@@ -6,11 +6,14 @@ import {Helper} from "js-helper/dist/shared/Helper";
 import {DataManager} from "cordova-sites/dist/client/js/DataManager";
 import {SyncJob} from "cordova-sites-easy-sync/dist/client/SyncJob";
 import {ViewHelper} from "js-helper/dist/client/ViewHelper";
+import {RIGHTS} from "../../../shared/RIGHTS";
+import {UserSite} from "cordova-sites-user-management/dist/client/js/Context/UserSite";
 
 export class EditPersonSite extends ModifyEntitySite {
 
     constructor(siteManager) {
         super(siteManager, view, Person);
+        this.addDelegate(new UserSite(this, RIGHTS.EDIT_USER, false));
     }
 
     async onViewLoaded() {

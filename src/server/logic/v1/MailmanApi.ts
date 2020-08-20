@@ -180,21 +180,16 @@ export class MailmanApi {
         if (listName) {
             url += "/" + listName;
         }
-        if (page && count){
-            url += "?count="+count+"&page="+page;
+        if (page && count) {
+            url += "?count=" + count + "&page=" + page;
         }
         return this._fetch(url);
     }
 
-    async addList(fqdnListname, description?, subjectPrefix?) {
+    async addList(fqdnListname, data?) {
         let url = "lists";
-        let data = {fqdn_listname: fqdnListname}
-        if (description){
-            data["description"] = description;
-        }
-        if (subjectPrefix){
-            data["subject_prefix"] = subjectPrefix;
-        }
+        data = Helper.nonNull(data, {});
+        data["fqdn_listname"] = fqdnListname
         return this._send(url, data);
     }
 
@@ -234,7 +229,7 @@ export class MailmanApi {
     //TODO change configuration with PUT
 
     async updateList(id, updateField, updateValue) {
-        let url = "lists/" + id+"/config";
+        let url = "lists/" + id + "/config";
         let data = {};
         data[updateField] = updateValue;
         return this._send(url, data, "PATCH")
@@ -251,8 +246,8 @@ export class MailmanApi {
     //TODO UserLinking
     //TODO UserAddresses
 
-    async setPreferredAddress(email){
-        let url = "users/"+email+"/preferred_address";
+    async setPreferredAddress(email) {
+        let url = "users/" + email + "/preferred_address";
         let data = {"email": email};
         return this._send(url, data);
     }
@@ -309,8 +304,8 @@ export class MailmanApi {
         return this._send("users", data);
     }
 
-    async deleteUser(emailOrId){
-        return this._send("users/"+emailOrId, {}, "DELETE");
+    async deleteUser(emailOrId) {
+        return this._send("users/" + emailOrId, {}, "DELETE");
     }
 
     async updateUser(idOrEmail, updateField, updateValue) {
@@ -340,14 +335,14 @@ export class MailmanApi {
 
     //----------------------------Members----------------------
     //TODO Finding members
-    async findMemberships(mail){
+    async findMemberships(mail) {
         let url = "members/find";
         return this._send(url, {"subscriber": mail});
     }
 
-    async getMembership(list, mail, role?){
+    async getMembership(list, mail, role?) {
         role = Helper.nonNull(role, "member");
-        let url = "lists/"+list+"/"+role+"/"+mail;
+        let url = "lists/" + list + "/" + role + "/" + mail;
 
         return this._fetch(url);
     }

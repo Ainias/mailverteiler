@@ -23,6 +23,32 @@
                 </label>
             </div>
             <div class="grid-x">
+                <label class="columns small-12">
+                    <input type="text" name='pw'>
+                    <span class="translation">moderator password</span>
+                </label>
+            </div>
+            <div class="grid-x">
+                <label class="small-12" >
+                    <span class="translation">Allow members to send mails</span>
+                    <select name="default_member_action">
+                        <option value="accept" class="translation">Accept</option>
+                        <option value="hold" class="translation" selected>Hold</option>
+                        <option value="discard" class="translation">Drop</option>
+                    </select>
+                </label>
+            </div>
+            <div class="grid-x">
+                <label class="small-12" >
+                    <span class="translation">Allow non-members to send mails</span>
+                    <select name="default_nonmember_action">
+                        <option value="defer" class="translation">Defer</option>
+                        <option value="accept" class="translation">Accept</option>
+                        <option value="hold" class="translation" selected>Hold</option>
+                    </select>
+                </label>
+            </div>
+            <div class="grid-x">
                 <button class="translation button">send</button>
             </div>
         </form>

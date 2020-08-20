@@ -2,22 +2,22 @@ import {MenuSite} from "cordova-sites";
 
 import view from "../../html/Site/selectListSite.html"
 import {MenuAction} from "cordova-sites/dist/client/js/Context/Menu/MenuAction/MenuAction";
-import {EditPersonSite} from "./EditPersonSite";
 import * as Tabulator from "tabulator-tables";
-import {DateHelper} from "js-helper/dist/shared/DateHelper";
-import {Person} from "../../../shared/model/Person";
 import {DataManager} from "cordova-sites/dist/client/js/DataManager";
-import {SyncJob} from "cordova-sites-easy-sync/dist/client/SyncJob";
 import {EditListSite} from "./EditListSite";
 import {Toast} from "cordova-sites/dist/client/js/Toast/Toast";
 import {App} from "cordova-sites/dist/client/js/App";
 import {Helper} from "js-helper/dist/shared/Helper";
 import {ConfirmDialog} from "cordova-sites/dist/client/js/Dialog/ConfirmDialog";
+import {RIGHTS} from "../../../shared/RIGHTS";
+import {UserSite} from "cordova-sites-user-management/dist/client/js/Context/UserSite";
 
 export class SelectListSite extends MenuSite {
     constructor(siteManager) {
         super(siteManager, view);
         this._table = null;
+
+        this.addDelegate(new UserSite(this, RIGHTS.VIEW_LIST, false));
     }
 
     onCreateMenu(navbar) {
