@@ -12,6 +12,7 @@ const os = require('os');
 const ifaces = os.networkInterfaces();
 
 let mode = (process.env.MODE || "development");
+
 // let mode = "production";
 
 function getIp() {
@@ -44,12 +45,12 @@ let moduleExports = {
         path: path.resolve(__dirname, 'www'),
         filename: 'bundle.js'
     },
-    resolve:{
+    resolve: {
         extensions: [".ts", ".js", ".mjs", ".json", "png"]
     },
 
     optimization: {
-        // minimize: false
+        minimize: false,
         minimizer: [
             new TerserPlugin({
                 cache: true,
@@ -58,13 +59,21 @@ let moduleExports = {
                 terserOptions: {
                     mangle: {
                         reserved: [
-                            "Article", "Exercise", "Course", "ExerciseProgress"
+                            "MailingListInit1000000007000", "PersonInit1000000006000", "MailingList",
+                            "Person",
+                            "DeleteUserManagement1000000000000",
+                            "SetupUserManagement1000000001000",
+                            "Data1000000005000",
+                            "Data1000000005001",
+                            "PersonInit1000000006000",
+                            "MailingListInit1000000007000",
                         ]
                     }
                 }
             })
         ]
     },
+    devtool: "source-map",
 
     plugins: [
         //Delete www before every Build (to only have nessesary files)
@@ -98,7 +107,7 @@ let moduleExports = {
             template: '!!html-loader!src/client/index.html'
         }),
         new webpack.DefinePlugin({
-            __HOST_ADDRESS__:  "'" + (process.env.HOST_URI || ((process.env.HOST || ("http://"+getIp())) + ":" + (process.env.REQUEST_PORT || process.env.PORT || "3000") + "/api/v1/")) + "'",
+            __HOST_ADDRESS__: "'" + (process.env.HOST_URI || ((process.env.HOST || ("http://" + getIp())) + ":" + (process.env.REQUEST_PORT || process.env.PORT || "3000") + "/api/v1/")) + "'",
             __SYNCHRONIZE_DB__: mode !== "production"
         }),
 
@@ -140,7 +149,7 @@ let moduleExports = {
             },
             {
                 test: /\.tsx?$/,
-                use: "ts-loader",
+                use: ["ts-loader"],
             },
             {
                 //Kopiert nur benutzte Bilder/Videos/Sound (benutzt durch JS (import), html oder css/sass)
@@ -160,7 +169,7 @@ let moduleExports = {
                                 // console.log("resourcePath: ", resourcePath);
                                 // console.log("context: ", context);
 
-                                return "/img/"+url;
+                                return "/img/" + url;
                             },
                             // useRelativePath: false
                         }
@@ -205,7 +214,7 @@ if (mode === "production") {
     //Transpilieren zu ES5
     moduleExports["module"]["rules"].push({
         test: /\.m?js$/,
-        exclude: /node_modules\/(?!(cordova-sites))/,
+        exclude: /node_modules\/(?!(cordova-sites|js-helper|cs-event-manager|polygon-geometry))/,
         use: {
             loader: 'babel-loader',
             options: {
@@ -214,23 +223,31 @@ if (mode === "production") {
         }
     });
 
-    //Hinzufügen von POSTCSS und Autoprefixer für alte css-Präfixe
-    moduleExports["module"]["rules"][2]["use"].splice(3, 0, {
-        //PostCSS ist nicht wichtig, autoprefixer schon. Fügt Präfixes hinzu (Bsp.: -webkit), wo diese benötigt werden
-        loader: 'postcss-loader',
+    moduleExports["module"]["rules"][1]["use"].unshift({
+        loader: 'babel-loader',
         options: {
-            plugins: [require('autoprefixer')({
-                browsers: ['last 2 versions', 'ie >= 9', 'android >= 4.4', 'ios >= 7']
-            })]
+            presets: ['@babel/preset-env'],
+            inputSourceMap: "inline",
+            sourceMaps: true
+
         }
     });
 
-    moduleExports["optimization"] = {
-        minimize: false,
-        // minimizer: [new UglifyJsPlugin({
-        //     include: /\.min\.js$/
-        // })]
-    }
+    //Hinzufügen von POSTCSS und Autoprefixer für alte css-Präfixe
+    moduleExports["module"]["rules"][3]["use"].splice(3, 0, {
+        //PostCSS ist nicht wichtig, autoprefixer schon. Fügt Präfixes hinzu (Bsp.: -webkit), wo diese benötigt werden
+        loader: 'postcss-loader',
+        options: {
+            plugins: [require('autoprefixer')()]
+        }
+    });
+
+    // moduleExports["optimization"] = {
+    //     minimize: false,
+    // minimizer: [new UglifyJsPlugin({
+    //     include: /\.min\.js$/
+    // })]
+    // }
 }
 
 module.exports = moduleExports;

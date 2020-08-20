@@ -1,0 +1,11 @@
+{
+  "background_color": "#FFF",
+  "display": "standalone",
+  "name": "Mailverteiler",
+  "short_name": "Mailverteiler",
+  "version": "io.cordova.hellocordova",
+  "description": "Eine Mailverteilerverwaltungsoberfläche für Mailman-3. Bietet die Möglichkeit noch mehr Daten über Nutzer zu speichern",
+  "author": "Silas Günther",
+  "icons": [],
+  "start_url": "index.html"
+}

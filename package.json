@@ -35,7 +35,6 @@
     "localforage": "^1.7.3",
     "mysql": "^2.18.1",
     "nodemailer": "^6.4.5",
-    "polygon-geometry": "git+https://git@github.com:Ainias/geometry.git#0.0.2",
     "sql.js": "1.1.0",
     "tabulator-tables": "^4.7.2",
     "ts-node": "8.3.0",
@@ -96,6 +95,12 @@
       "android",
       "ios",
       "browser"
+    ],
+    "browserslist": [
+      "last 2 versions",
+      "ie >= 9",
+      "android >= 4.4",
+      "ios >= 7"
     ]
   }
 }
