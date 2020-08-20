@@ -38,7 +38,9 @@
     "sql.js": "1.1.0",
     "tabulator-tables": "^4.7.2",
     "ts-node": "8.3.0",
-    "typeorm": "^0.2.24"
+    "typeorm": "^0.2.24",
+    "ts-loader": "^6.2.1",
+    "typescript": "^3.8.3"
   },
   "devDependencies": {
     "@babel/polyfill": "^7.8.7",
