@@ -73,9 +73,11 @@ app.use(function (req, res, next) {
     next();
 });
 
+app.use('/mail/api', routes);
 app.use('/api', routes);
 
 app.use(express.static(path.resolve(path.dirname(process.argv[1]), "public")));
+app.use("/mail", express.static(path.resolve(path.dirname(process.argv[1]), "public")));
 
 //Handle errors
 app.use(function (err, req, res, next) {
