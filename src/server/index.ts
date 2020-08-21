@@ -100,4 +100,3 @@ EasySyncServerDb.getInstance()._connectionPromise.then(async () => {
         console.log("listening on port " + port);
     });
 });
-

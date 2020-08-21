@@ -1533,7 +1533,7 @@ __export(__webpack_require__(9));
 "use strict";
 /* WEBPACK VAR INJECTION */(function(Buffer) {/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return AuroraDataApiDriver; });
 /* harmony import */ var tslib__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(0);
-/* harmony import */ var _DriverUtils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(21);
+/* harmony import */ var _DriverUtils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(22);
 /* harmony import */ var _AuroraDataApiQueryRunner__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(275);
 /* harmony import */ var _util_DateUtils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(8);
 /* harmony import */ var _platform_PlatformTools__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(3);
@@ -2467,7 +2467,14 @@ var DataManager = /*#__PURE__*/function () {
               case 0:
                 asJson = Helper_1.Helper.nonNull(asJson, true);
                 useBasePath = Helper_1.Helper.nonNull(useBasePath, true);
-                url = useBasePath ? DataManager.basePath(url) : url;
+
+                if (useBasePath === true) {
+                  useBasePath = DataManager._basePath;
+                } else if (typeof useBasePath !== "string") {
+                  useBasePath = "";
+                }
+
+                url = DataManager.basePath(url, useBasePath);
                 return _context3.abrupt("return", DataManager.fetch(url)["catch"](function (e) {
                   if (DataManager.onlineCallback) {
                     DataManager.onlineCallback(false);
@@ -2486,7 +2493,7 @@ var DataManager = /*#__PURE__*/function () {
                   return res.text();
                 }));
 
-              case 4:
+              case 5:
               case "end":
                 return _context3.stop();
             }
@@ -2510,7 +2517,7 @@ var DataManager = /*#__PURE__*/function () {
           while (1) {
             switch (_context4.prev = _context4.next) {
               case 0:
-                return _context4.abrupt("return", this.load(url, false, false));
+                return _context4.abrupt("return", this.load(url, false, DataManager._assetBasePath));
 
               case 1:
               case "end":
@@ -2611,8 +2618,9 @@ var DataManager = /*#__PURE__*/function () {
     }
   }, {
     key: "basePath",
-    value: function basePath(url) {
-      return DataManager._basePath + (url ? url : "");
+    value: function basePath(url, _basePath) {
+      _basePath = Helper_1.Helper.nonNull(_basePath, DataManager._basePath);
+      return _basePath + (url ? url : "");
     }
   }, {
     key: "setHeader",
@@ -2628,6 +2636,7 @@ exports.DataManager = DataManager;
 DataManager.onlineCallback = null;
 DataManager._additionalHeaders = {};
 DataManager._basePath = "";
+DataManager._assetBasePath = "";
 
 /***/ }),
 /* 12 */
@@ -4415,107 +4424,6 @@ var TableColumn = /** @class */ (function () {
 
 /***/ }),
 /* 21 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return DriverUtils; });
-/* harmony import */ var tslib__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(0);
-/* harmony import */ var _util_StringUtils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(52);
-
-
-/**
-* Common driver utility functions.
-*/
-var DriverUtils = /** @class */ (function () {
-    function DriverUtils() {
-    }
-    // -------------------------------------------------------------------------
-    // Public Static Methods
-    // -------------------------------------------------------------------------
-    /**
-     * Normalizes and builds a new driver options.
-     * Extracts settings from connection url and sets to a new options object.
-     */
-    DriverUtils.buildDriverOptions = function (options, buildOptions) {
-        if (options.url) {
-            var parsedUrl = this.parseConnectionUrl(options.url);
-            var urlDriverOptions = {
-                type: parsedUrl.type,
-                host: parsedUrl.host,
-                username: parsedUrl.username,
-                password: parsedUrl.password,
-                port: parsedUrl.port,
-                database: parsedUrl.database
-            };
-            if (buildOptions && buildOptions.useSid) {
-                urlDriverOptions.sid = parsedUrl.database;
-            }
-            return Object.assign({}, options, urlDriverOptions);
-        }
-        return Object.assign({}, options);
-    };
-    /**
-     * Builds column alias from given alias name and column name.
-     *
-     * If alias length is greater than the limit (if any) allowed by the current
-     * driver, replaces it with a hashed string.
-     *
-     * @param driver Current `Driver`.
-     * @param alias Alias part.
-     * @param column Name of the column to be concatened to `alias`.
-     *
-     * @return An alias allowing to select/transform the target `column`.
-     */
-    DriverUtils.buildColumnAlias = function (_a, alias, column) {
-        var maxAliasLength = _a.maxAliasLength;
-        var columnAliasName = alias + "_" + column;
-        if (maxAliasLength && maxAliasLength > 0 && columnAliasName.length > maxAliasLength) {
-            return Object(_util_StringUtils__WEBPACK_IMPORTED_MODULE_1__[/* hash */ "b"])(columnAliasName, { length: maxAliasLength });
-        }
-        return columnAliasName;
-    };
-    // -------------------------------------------------------------------------
-    // Private Static Methods
-    // -------------------------------------------------------------------------
-    /**
-     * Extracts connection data from the connection url.
-     */
-    DriverUtils.parseConnectionUrl = function (url) {
-        var type = url.split(":")[0];
-        var firstSlashes = url.indexOf("//");
-        var preBase = url.substr(firstSlashes + 2);
-        var secondSlash = preBase.indexOf("/");
-        var base = (secondSlash !== -1) ? preBase.substr(0, secondSlash) : preBase;
-        var afterBase = (secondSlash !== -1) ? preBase.substr(secondSlash + 1) : undefined;
-        var lastAtSign = base.lastIndexOf("@");
-        var usernameAndPassword = base.substr(0, lastAtSign);
-        var hostAndPort = base.substr(lastAtSign + 1);
-        var username = usernameAndPassword;
-        var password = "";
-        var firstColon = usernameAndPassword.indexOf(":");
-        if (firstColon !== -1) {
-            username = usernameAndPassword.substr(0, firstColon);
-            password = usernameAndPassword.substr(firstColon + 1);
-        }
-        var _a = tslib__WEBPACK_IMPORTED_MODULE_0__[/* __read */ "e"](hostAndPort.split(":"), 2), host = _a[0], port = _a[1];
-        return {
-            type: type,
-            host: host,
-            username: decodeURIComponent(username),
-            password: decodeURIComponent(password),
-            port: port ? parseInt(port) : undefined,
-            database: afterBase || undefined
-        };
-    };
-    return DriverUtils;
-}());
-
-
-//# sourceMappingURL=DriverUtils.js.map
-
-
-/***/ }),
-/* 22 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4647,6 +4555,107 @@ __exportStar(__webpack_require__(49), exports);
 __exportStar(__webpack_require__(57), exports);
 
 __exportStar(__webpack_require__(260), exports);
+
+/***/ }),
+/* 22 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return DriverUtils; });
+/* harmony import */ var tslib__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(0);
+/* harmony import */ var _util_StringUtils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(52);
+
+
+/**
+* Common driver utility functions.
+*/
+var DriverUtils = /** @class */ (function () {
+    function DriverUtils() {
+    }
+    // -------------------------------------------------------------------------
+    // Public Static Methods
+    // -------------------------------------------------------------------------
+    /**
+     * Normalizes and builds a new driver options.
+     * Extracts settings from connection url and sets to a new options object.
+     */
+    DriverUtils.buildDriverOptions = function (options, buildOptions) {
+        if (options.url) {
+            var parsedUrl = this.parseConnectionUrl(options.url);
+            var urlDriverOptions = {
+                type: parsedUrl.type,
+                host: parsedUrl.host,
+                username: parsedUrl.username,
+                password: parsedUrl.password,
+                port: parsedUrl.port,
+                database: parsedUrl.database
+            };
+            if (buildOptions && buildOptions.useSid) {
+                urlDriverOptions.sid = parsedUrl.database;
+            }
+            return Object.assign({}, options, urlDriverOptions);
+        }
+        return Object.assign({}, options);
+    };
+    /**
+     * Builds column alias from given alias name and column name.
+     *
+     * If alias length is greater than the limit (if any) allowed by the current
+     * driver, replaces it with a hashed string.
+     *
+     * @param driver Current `Driver`.
+     * @param alias Alias part.
+     * @param column Name of the column to be concatened to `alias`.
+     *
+     * @return An alias allowing to select/transform the target `column`.
+     */
+    DriverUtils.buildColumnAlias = function (_a, alias, column) {
+        var maxAliasLength = _a.maxAliasLength;
+        var columnAliasName = alias + "_" + column;
+        if (maxAliasLength && maxAliasLength > 0 && columnAliasName.length > maxAliasLength) {
+            return Object(_util_StringUtils__WEBPACK_IMPORTED_MODULE_1__[/* hash */ "b"])(columnAliasName, { length: maxAliasLength });
+        }
+        return columnAliasName;
+    };
+    // -------------------------------------------------------------------------
+    // Private Static Methods
+    // -------------------------------------------------------------------------
+    /**
+     * Extracts connection data from the connection url.
+     */
+    DriverUtils.parseConnectionUrl = function (url) {
+        var type = url.split(":")[0];
+        var firstSlashes = url.indexOf("//");
+        var preBase = url.substr(firstSlashes + 2);
+        var secondSlash = preBase.indexOf("/");
+        var base = (secondSlash !== -1) ? preBase.substr(0, secondSlash) : preBase;
+        var afterBase = (secondSlash !== -1) ? preBase.substr(secondSlash + 1) : undefined;
+        var lastAtSign = base.lastIndexOf("@");
+        var usernameAndPassword = base.substr(0, lastAtSign);
+        var hostAndPort = base.substr(lastAtSign + 1);
+        var username = usernameAndPassword;
+        var password = "";
+        var firstColon = usernameAndPassword.indexOf(":");
+        if (firstColon !== -1) {
+            username = usernameAndPassword.substr(0, firstColon);
+            password = usernameAndPassword.substr(firstColon + 1);
+        }
+        var _a = tslib__WEBPACK_IMPORTED_MODULE_0__[/* __read */ "e"](hostAndPort.split(":"), 2), host = _a[0], port = _a[1];
+        return {
+            type: type,
+            host: host,
+            username: decodeURIComponent(username),
+            password: decodeURIComponent(password),
+            port: port ? parseInt(port) : undefined,
+            database: afterBase || undefined
+        };
+    };
+    return DriverUtils;
+}());
+
+
+//# sourceMappingURL=DriverUtils.js.map
+
 
 /***/ }),
 /* 23 */
@@ -16091,7 +16100,7 @@ var RelationIdLoader_RelationIdLoader = /** @class */ (function () {
 //# sourceMappingURL=RelationIdLoader.js.map
 
 // EXTERNAL MODULE: ./node_modules/typeorm/browser/driver/DriverUtils.js
-var DriverUtils = __webpack_require__(21);
+var DriverUtils = __webpack_require__(22);
 
 // CONCATENATED MODULE: ./node_modules/typeorm/browser/connection/Connection.js
 
@@ -19330,7 +19339,7 @@ var ConnectionIsNotSetError_ConnectionIsNotSetError = /** @class */ (function (_
 var DriverPackageNotInstalledError = __webpack_require__(58);
 
 // EXTERNAL MODULE: ./node_modules/typeorm/browser/driver/DriverUtils.js
-var DriverUtils = __webpack_require__(21);
+var DriverUtils = __webpack_require__(22);
 
 // EXTERNAL MODULE: ./node_modules/typeorm/browser/util/DateUtils.js
 var DateUtils = __webpack_require__(8);
@@ -26267,7 +26276,7 @@ exports.UserSite = void 0;
 
 var shared_1 = __webpack_require__(62);
 
-var client_1 = __webpack_require__(22);
+var client_1 = __webpack_require__(21);
 
 var UserManager_1 = __webpack_require__(79);
 
@@ -32564,7 +32573,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.UserManager = void 0;
 
-var client_1 = __webpack_require__(22);
+var client_1 = __webpack_require__(21);
 
 var User_1 = __webpack_require__(110);
 
@@ -35375,7 +35384,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.EasySyncClientDb = void 0;
 
-var client_1 = __webpack_require__(22);
+var client_1 = __webpack_require__(21);
 
 var cordova_sites_database_1 = __webpack_require__(9);
 
@@ -35558,7 +35567,7 @@ var RelationIdAttribute = __webpack_require__(116);
 var RelationCountAttribute = __webpack_require__(117);
 
 // EXTERNAL MODULE: ./node_modules/typeorm/browser/driver/DriverUtils.js
-var DriverUtils = __webpack_require__(21);
+var DriverUtils = __webpack_require__(22);
 
 // CONCATENATED MODULE: ./node_modules/typeorm/browser/query-builder/relation-id/RelationIdLoader.js
 
@@ -40016,7 +40025,7 @@ exports.SyncJob = void 0;
 
 var LastSyncDates_1 = __webpack_require__(196);
 
-var client_1 = __webpack_require__(22);
+var client_1 = __webpack_require__(21);
 
 var shared_1 = __webpack_require__(62);
 
@@ -42768,7 +42777,7 @@ exports.LoginSite = void 0;
 
 var UserSite_1 = __webpack_require__(50);
 
-var client_1 = __webpack_require__(22);
+var client_1 = __webpack_require__(21);
 
 var view = __webpack_require__(531);
 
@@ -42964,7 +42973,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.UserMenuAction = void 0;
 
-var client_1 = __webpack_require__(22);
+var client_1 = __webpack_require__(21);
 
 var UserManager_1 = __webpack_require__(79);
 
@@ -74008,7 +74017,7 @@ exports.StartUserSiteMenuAction = void 0;
 
 var UserMenuAction_1 = __webpack_require__(146);
 
-var client_1 = __webpack_require__(22);
+var client_1 = __webpack_require__(21);
 
 var StartUserSiteMenuAction = /*#__PURE__*/function (_UserMenuAction_1$Use) {
   _inherits(StartUserSiteMenuAction, _UserMenuAction_1$Use);
@@ -81272,7 +81281,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var client_1 = __webpack_require__(22);
+var client_1 = __webpack_require__(21);
 
 var shared_1 = __webpack_require__(523);
 
@@ -81572,7 +81581,7 @@ exports.ClientModel = void 0;
 
 var cordova_sites_database_1 = __webpack_require__(9);
 
-var client_1 = __webpack_require__(22);
+var client_1 = __webpack_require__(21);
 
 var shared_1 = __webpack_require__(62);
 
@@ -81892,7 +81901,7 @@ var EasySyncBaseModel_1 = __webpack_require__(63);
 
 var cordova_sites_database_1 = __webpack_require__(9);
 
-var client_1 = __webpack_require__(22);
+var client_1 = __webpack_require__(21);
 
 var Helper_1 = __webpack_require__(19);
 
@@ -82351,7 +82360,7 @@ exports.ForgotPasswordSite = void 0;
 
 var UserSite_1 = __webpack_require__(50);
 
-var client_1 = __webpack_require__(22);
+var client_1 = __webpack_require__(21);
 
 var view = __webpack_require__(532);
 
@@ -85969,7 +85978,7 @@ var NativescriptQueryRunner = /** @class */ (function (_super) {
 /* WEBPACK VAR INJECTION */(function(Buffer) {/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return RawSqlResultsToEntityTransformer; });
 /* harmony import */ var tslib__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(0);
 /* harmony import */ var _util_OrmUtils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6);
-/* harmony import */ var _driver_DriverUtils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(21);
+/* harmony import */ var _driver_DriverUtils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(22);
 
 
 
@@ -97993,7 +98002,7 @@ exports.SyncJob_old = void 0;
 
 var LastSyncDates_1 = __webpack_require__(196);
 
-var client_1 = __webpack_require__(22);
+var client_1 = __webpack_require__(21);
 
 var shared_1 = __webpack_require__(62);
 
@@ -99038,7 +99047,7 @@ exports.OfflineUserManager = void 0;
 
 var client_1 = __webpack_require__(206);
 
-var client_2 = __webpack_require__(22);
+var client_2 = __webpack_require__(21);
 
 var UserManager_1 = __webpack_require__(79);
 
@@ -99520,7 +99529,7 @@ var Helper_1 = __webpack_require__(19);
 
 var DataManager_1 = __webpack_require__(11);
 
-var client_1 = __webpack_require__(22);
+var client_1 = __webpack_require__(21);
 
 var ViewHelper_1 = __webpack_require__(85);
 
@@ -99865,7 +99874,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.RegistrationSite = void 0;
 
-var client_1 = __webpack_require__(22);
+var client_1 = __webpack_require__(21);
 
 var view = __webpack_require__(540);
 
@@ -100022,7 +100031,7 @@ var de = __webpack_require__(272);
 var en = __webpack_require__(273);
 
 // EXTERNAL MODULE: ./node_modules/cordova-sites/dist/client.js
-var client = __webpack_require__(22);
+var client = __webpack_require__(21);
 
 // EXTERNAL MODULE: ./node_modules/cordova-sites-user-management/dist/client/js/translationInit.js
 var translationInit = __webpack_require__(261);
@@ -102469,6 +102478,7 @@ client["App"].addInitialization( /*#__PURE__*/script_asyncToGenerator( /*#__PURE
   }, _callee);
 })));
 client["DataManager"]._basePath = 'https://smd-aachen.de/mail/api/v1/';
+client["DataManager"]._assetBasePath = '/mail/';
 
 client["DataManager"].onlineCallback = function (isOnline) {
   if (!isOnline) {

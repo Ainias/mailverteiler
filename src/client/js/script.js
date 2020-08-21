@@ -49,6 +49,7 @@ App.addInitialization(async () => {
 });
 
 DataManager._basePath = __HOST_ADDRESS__;
+DataManager._assetBasePath = __ASSET_BASE_PATH__;
 DataManager.onlineCallback = isOnline => {
     if (!isOnline){
         new Toast("not online!").show();
