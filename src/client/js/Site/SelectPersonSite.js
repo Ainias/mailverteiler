@@ -20,8 +20,10 @@ export class SelectPersonSite extends MenuSite {
         fragment.setOnRowClickedListener(async (e, row) => {
             let id = row._row.data.id;
             let res = await this.startSite(EditPersonSite, {id: id});
-            fragment.addData([res]);
-            new Toast("modified entry").show();
+            if (res) {
+                fragment.addData([res]);
+                new Toast("modified entry").show();
+            }
         })
 
         fragment.addRowContextAction({
@@ -61,10 +63,11 @@ export class SelectPersonSite extends MenuSite {
     onCreateMenu(navbar) {
         navbar.addAction(new MenuAction("new entry", async () => {
             let res = await this.startSite(EditPersonSite);
-            if (this._table) {
+            console.log("res", res);
+            if (this._table && res) {
                 this._fragment.addData([res]);
+                new Toast("added entry").show();
             }
-            new Toast("added entry").show();
         }));
         navbar.addAction(new MenuAction("synchronise", async () => {
             try {
@@ -72,7 +75,6 @@ export class SelectPersonSite extends MenuSite {
                 let res = {"askAgain": false};
                 do {
                     res = await DataManager.load("synchronise");
-                    console.log("synchronize-update", res);
                 } while (res.askAgain);
                 if (res.success) {
                     new Toast("synchronised!").show();

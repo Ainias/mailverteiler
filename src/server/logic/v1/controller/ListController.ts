@@ -9,7 +9,6 @@ import {MailingList} from "../../../../shared/model/MailingList";
 export class ListController extends SyncController {
 
     static async _addOrUpdatePerson(mailmanId, mail) {
-
         let api = MailmanApi.getInstance();
 
         let personData = null;
@@ -43,7 +42,6 @@ export class ListController extends SyncController {
     }
 
     static async modifyPerson(req, res) {
-        //TODO Check rights
         let modelData = req.body.person;
 
         modelData.email = modelData.email.toLowerCase();
@@ -78,35 +76,28 @@ export class ListController extends SyncController {
     }
 
     static async getPersons(req, res) {
-        //TODO rights
-
         let queries = JSON.parse(req.query.queries);
         if (queries.length >= 1 && queries[0].model === Person.getSchemaName()) {
             let mails: any = [];
             let filterLater = false;
-            if (Helper.isNotNull(queries[0].member) && queries[0].list) {
+            if (Helper.isNotNull(queries[0].member)) {
                 let api = MailmanApi.getInstance();
                 let members: any = [];
                 let where = queries[0].where;
 
-                if (queries[0].member === "member") {
-                    members = await api.getListMembers(queries[0].list);
-                } else if (queries[0].member === "owner") {
-                    members = await api.getListOwners(queries[0].list);
-                } else if (queries[0].member === "moderator") {
-                    members = await api.getListModerators(queries[0].list);
-                } else if (queries[0].member === false) {
-                    members = await api.getListMembers(queries[0].list);
-                    members = members.entries ? members.entries : [];
-
-                    // let owners: any = await api.getListOwners(queries[0].list);
-                    // if (owners.entries) {
-                    //     members.push(...owners.entries);
-                    // }
-                    // let moderators: any = await api.getListModerators(queries[0].list);
-                    // if (moderators.entries) {
-                    //     members.push(...moderators.entries);
-                    // }
+                if (queries[0].list) {
+                    if (queries[0].member === "member") {
+                        members = await api.getListMembers(queries[0].list);
+                    } else if (queries[0].member === "owner") {
+                        members = await api.getListOwners(queries[0].list);
+                    } else if (queries[0].member === "moderator") {
+                        members = await api.getListModerators(queries[0].list);
+                    } else if (queries[0].member === false) {
+                        members = await api.getListMembers(queries[0].list);
+                        members = members.entries ? members.entries : [];
+                    }
+                } else {
+                    members = [];
                 }
 
                 members = Array.isArray(members.entries) ? members.entries : members;
@@ -167,8 +158,6 @@ export class ListController extends SyncController {
     }
 
     static async getLists(req, res) {
-        //TODO check rights
-
         let listName = Helper.nonNull(req.query.listname, null);
         let api = MailmanApi.getInstance();
 
@@ -182,10 +171,7 @@ export class ListController extends SyncController {
     }
 
     static async modifyList(req, res) {
-        //TODO check rights
-
-        //TODO change into settings
-        const DOMAIN_NAME = "smdac.uber.space";
+        const DOMAIN_NAME = process.env.DOMAIN_NAME;
 
         let listId = req.body.list_id;
         let name = req.body.display_name.toLowerCase();
@@ -232,14 +218,14 @@ export class ListController extends SyncController {
                 listModel.save();
             }
         } else {
-            list = await api.addList(mail, {
-                "description": description,
-                "subject_prefix": subjectPrefix,
-                "default_member_action": defaultMemberAction,
-                "default_nonmember_action": defaultNonmemberAction,
-            });
+            list = await api.addList(mail);
             if (list === undefined) {
                 list = await api.getLists(mail);
+                await api.updateList(list.list_id, "description", description);
+                await api.updateList(list.list_id, "subject_prefix", subjectPrefix);
+                await api.updateList(list.list_id, "default_member_action", defaultMemberAction);
+                await api.updateList(list.list_id, "default_nonmember_action", defaultNonmemberAction);
+                await api.updateList(list.list_id, "respond_to_post_requests", false);
                 if (typeof req.body.pw === "string" && req.body.pw.length >= 8) {
                     listId = list.list_id;
                     listModel = await MailingList.findOne({"mailmanId": listId});
@@ -268,8 +254,6 @@ export class ListController extends SyncController {
     }
 
     static async getMemberships(req, res) {
-        //TODO check rights
-
         let api = MailmanApi.getInstance();
         let memberships = await api.findMemberships(req.query.email);
 
@@ -338,7 +322,6 @@ export class ListController extends SyncController {
     }
 
     static async leaveList(req, res) {
-
         let list_id = req.body.list_id;
         let user_mail = req.body.subscriberMail;
         let role = Helper.nonNull(req.body.role, "member");
@@ -377,7 +360,7 @@ export class ListController extends SyncController {
             await Helper.asyncForEach(personsOfAddresses, async person => {
                 if (!person.mailmanId) {
                     let personData: any = await api.getUsers(person.email);
-                    if (personData.user_id){
+                    if (personData.user_id) {
                         person.mailmanId = personData.user_id;
                         person.save();
                     }
@@ -400,7 +383,7 @@ export class ListController extends SyncController {
         });
 
         let result = {"success": true}
-        if (persons.length === MAX_ENTRIES){
+        if (persons.length === MAX_ENTRIES) {
             result["askAgain"] = true;
         }
 

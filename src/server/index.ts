@@ -75,6 +75,9 @@ app.use(function (req, res, next) {
 
 app.use('/mail/api', routes);
 app.use('/api', routes);
+app.get('/newMailTemplate', (req, res) => {
+    res.send("Eine E-Mail wartet auf Approval für die Liste $display_name. \n\n"+process.env.CHECK_MAIL_SITE);
+});
 
 app.use(express.static(path.resolve(path.dirname(process.argv[1]), "public")));
 app.use("/mail", express.static(path.resolve(path.dirname(process.argv[1]), "public")));

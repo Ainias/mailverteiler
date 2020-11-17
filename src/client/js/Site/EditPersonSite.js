@@ -8,6 +8,9 @@ import {SyncJob} from "cordova-sites-easy-sync/dist/client/SyncJob";
 import {ViewHelper} from "js-helper/dist/client/ViewHelper";
 import {RIGHTS} from "../../../shared/RIGHTS";
 import {UserSite} from "cordova-sites-user-management/dist/client/js/Context/UserSite";
+import {App} from "cordova-sites/dist/client/js/App";
+import {CheckMailSite} from "./CheckMailSite";
+import {DateHelper} from "js-helper";
 
 export class EditPersonSite extends ModifyEntitySite {
 
@@ -38,7 +41,7 @@ export class EditPersonSite extends ModifyEntitySite {
             lists.entries.forEach(entry => {
                 let elem = this._membershipTemplate.cloneNode(true);
                 elem.querySelector(".membership-name").innerText = entry.list_name;
-                elem.querySelector(".membership-checkbox").name = "list-"+entry.list_id;
+                elem.querySelector(".membership-checkbox").name = "list-" + entry.list_id;
 
                 this._membershipContainer.appendChild(elem);
             });
@@ -67,17 +70,17 @@ export class EditPersonSite extends ModifyEntitySite {
             entity = new Person();
         }
 
-        this._memberships = await DataManager.load("memberships"+DataManager.buildQuery({"email": entity.email}));
+        this._memberships = await DataManager.load("memberships" + DataManager.buildQuery({"email": entity.email}));
 
         return entity;
     }
 
-    async save(values){
+    async save(values) {
         await this.hydrate(values, this._entity);
 
         let memberships = []
         Object.keys(values).forEach(key => {
-            if (key.startsWith("list-")){
+            if (key.startsWith("list-")) {
                 memberships.push(key.substr(5));
             }
         })
@@ -86,20 +89,20 @@ export class EditPersonSite extends ModifyEntitySite {
 
         let data = {"person": personData, "memberships": memberships};
         let res = await DataManager.send(Person.SAVE_PATH, data);
-        if (res.success === false){
+        if (res.success === false) {
             throw new Error(data.errors);
         }
         // await this._entity.save();
     }
 
-    async hydrate(values, entity){
-        return super.hydrate(values, entity)
-    };
-    async dehydrate(entity){
+    async dehydrate(entity) {
         let values = await super.dehydrate(entity);
-        if (this._memberships && this._memberships.entries){
+        if (entity.birthday) {
+            values["birthday"] = DateHelper.strftime("%Y-%m-%d", new Date(entity.birthday));
+        }
+        if (this._memberships && this._memberships.entries) {
             this._memberships.entries.forEach(entry => {
-                values["list-"+entry.list_id] = "1";
+                values["list-" + entry.list_id] = "1";
             });
         }
         return values;
@@ -115,3 +118,7 @@ export class EditPersonSite extends ModifyEntitySite {
         return super.validate(values, form); //return only true
     }
 }
+
+App.addInitialization(app => {
+    app.addDeepLink("editPerson", EditPersonSite);
+})

@@ -1,0 +1,14 @@
+#editPersonForm {
+  label {
+    padding: 0 0.2rem;
+
+    input[type="date"] ~ span {
+      top: -11px;
+      left: 0;
+      bottom: 0;
+      font-size: 11px;
+      opacity: 1;
+      color: black;
+    }
+  }
+}

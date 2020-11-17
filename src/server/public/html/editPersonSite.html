@@ -5,69 +5,49 @@
         <br/>
         <br/>
         <br/>
-        <form class="entity-form">
+        <form class="entity-form" id = "editPersonForm">
             <div class="grid-x">
-                <label class="columns small-12">
+                <label class="columns small-12 medium-6">
                     <input type="text" name='firstname' required>
                     <span class="translation">Firstname</span>
                 </label>
-            </div>
-            <div class="grid-x">
-                <label class="columns small-12">
+                <label class="columns small-12 medium-6">
                     <input type="text" name='surname' required>
                     <span class="translation">Surname</span>
                 </label>
-            </div>
-            <div class="grid-x">
-                <label class="columns small-12">
+                <label class="columns small-12 medium-6">
                     <input type="text" name='email' required>
                     <span class="translation">E-Mail</span>
                 </label>
-            </div>
-            <div class="grid-x">
-                <label class="columns small-12">
+                <label class="columns small-12 medium-6">
+                    <input type="date" name='birthday'>
+                    <span class="translation">birthday</span>
+                </label>
+                <label class="columns small-12 medium-6">
                     <input type="text" name='street'>
                     <span class="translation">Street</span>
                 </label>
-            </div>
-            <div class="grid-x">
-                <label class="columns small-12">
+                <label class="columns small-12 medium-6">
                     <input type="text" name='housenumber'>
                     <span class="translation">House-Nr.</span>
                 </label>
-            </div>
-            <div class="grid-x">
-                <label class="columns small-12">
+                <label class="columns small-12 medium-6">
                     <input type="text" name='addressSuffix'>
                     <span class="translation">address suffix</span>
                 </label>
-            </div>
-            <div class="grid-x">
-                <label class="columns small-12">
-                    <input type="text" name='countrycode'>
-                    <span class="translation">Country Code</span>
-                </label>
-            </div>
-            <div class="grid-x">
-                <label class="columns small-12">
+                <label class="columns small-12 medium-6">
                     <input type="text" name='zipcode'>
                     <span class="translation">Zipcode</span>
                 </label>
-            </div>
-            <div class="grid-x">
-                <label class="columns small-12">
+                <label class="columns small-12 medium-6">
                     <input type="text" name='city'>
                     <span class="translation">city</span>
                 </label>
-            </div>
-            <div class="grid-x">
-                <label class="columns small-12">
-                    <input type="text" name='birthday'>
-                    <span class="translation">birthday</span>
+                <label class="columns small-12 medium-6">
+                    <input type="text" name='countrycode'>
+                    <span class="translation">Country Code</span>
                 </label>
-            </div>
-            <div class="grid-x">
-                <label class="columns small-12">
+                <label class="columns small-12 medium-12">
                     <input type="text" name='comment'>
                     <span class="translation">comment</span>
                 </label>
@@ -75,14 +55,12 @@
             <div class="grid-x" id="membership-container">
                 <label class="grix-x columns small-6 medium-4 large-3 membership" id = "membership-template">
                     <input type="checkbox" class="membership-checkbox" value="1">
-                    <span class="translation membership-name"></span>
+                    <span class="membership-name"></span>
                 </label>
             </div>
             <div class="grid-x">
-                <button class="translation button">send</button>
+                <button class="translation small-12 button">send</button>
             </div>
-
         </form>
     </section>
-
 </article>

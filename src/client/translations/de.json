@@ -1,1 +1,41 @@
-{}
+{
+  "document-title-empty": "SMD-Mail",
+  "change user": "User bearbeiten",
+  "new entry": "Neuer Eintrag",
+  "synchronise": "Synchronisieren",
+  "lists": "Listen",
+  "delete selected persons?": "Ausgewählte Personen löschen?",
+  "are you sure to delete these persons? they will be gone forever! (that's a long time!)": "Willst du die Personen wirklich löschen? Sie werden für immer weg sein! (Eine sehr lange Zeit)",
+  "cancel-button": "Abbrechen",
+  "confirm-button": "Okay",
+  "firstname": "Vorname",
+  "surname": "Nachname",
+  "e-mail": "E-Mail",
+  "street": "Straße",
+  "house-nr.": "Hausnummer",
+  "address suffix": "Adresszusatz",
+  "country code": "Land",
+  "zipcode": "Postleitzahl",
+  "city": "Stadt",
+  "birthday": "Geburtstag",
+  "comment": "Kommentar",
+  "send": "Speichern",
+
+  "name": "Name",
+  "description": "Beschreibung",
+  "subject_prefix": "Betreff-Präfix",
+  "moderator password": "Moderator Passwort",
+  "allow members to send mails": "Mitgliedern erlauben, Mails zu senden",
+  "accept": "Akzeptieren",
+  "hold": "Halten",
+  "drop": "Löschen",
+  "allow non-members to send mails": "Nicht-Mitgliedern erlauben, Mails zu senden",
+
+  "owners": "Moderatoren",
+  "members": "Mitglieder",
+  "non-members": "Keine Mitglieder",
+
+  "wrong password": "Falsches Passwort!",
+  "modified entry": "Eintrag bearbeitet",
+  "added entry": "Eintrag hinzugefügt"
+}

@@ -23,15 +23,15 @@ export class SelectListSite extends MenuSite {
     onCreateMenu(navbar) {
         navbar.addAction(new MenuAction("new entry", async () => {
             let res = await this.startSite(EditListSite);
-            if (this._table) {
+            if (this._table && res) {
                 this._table.updateOrAddData([res]);
+                new Toast("added entry").show();
             }
-            new Toast("added entry").show();
         }));
         return navbar;
     }
 
-    async deleteLists(rows){
+    async deleteLists(rows) {
         if (await new ConfirmDialog("Are you sure to delete these lists? They will be gone forever! (That's a long time!)", "Delete selected lists?").show()) {
             this.showLoadingSymbol();
             await DataManager.send("deleteLists", {lists: rows.map(r => r.getData().list_id)});
@@ -88,25 +88,22 @@ export class SelectListSite extends MenuSite {
             rowDblClick: async (e, row) => { //trigger an alert message when the row is clicked
                 let id = row._row.data.list_id;
                 let res = await this.startSite(EditListSite, {id: id});
-                this._table.updateOrAddData([res]);
-                new Toast("modified entry").show();
+                if (res) {
+                    this._table.updateOrAddData([res]);
+                    new Toast("modified entry").show();
+                }
             },
             rowContextMenu: [{
-                "label":"delete",
-                "action":async (e, row) => {
+                "label": "delete",
+                "action": async (e, row) => {
                     let rows = this._table.getSelectedRows();
-                    if (rows.length === 0){
+                    if (rows.length === 0) {
                         rows = [row];
                     }
                     await this.deleteLists(rows);
                 }
             }]
         })
-
-        // window.addEventListener("resize", () => {
-        //     this._updateTableHeight();
-        // })
-
         return res;
     }
 }

@@ -107,10 +107,12 @@ export class SelectPersonFragment extends AbstractFragment {
                     where: filter,
                     orderBy: orderBy
                 };
-                if (Helper.isNotNull(this._memberFilter, this._list)){
+                if (Helper.isNotNull(this._memberFilter)){
                     query.member = this._memberFilter;
                     query.list = this._list;
                 }
+
+                console.log("query", query);
 
                 let modelJson = await DataManager.load("/persons" +
                     DataManager.buildQuery({

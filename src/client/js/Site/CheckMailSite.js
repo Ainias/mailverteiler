@@ -19,6 +19,11 @@ export class CheckMailSite extends MenuSite {
         return res;
     }
 
+    onCreateMenu(navbar) {
+        navbar.removeAllActions();
+        super.onCreateMenu(navbar);
+    }
+
     onViewLoaded() {
         let res = super.onViewLoaded();
 

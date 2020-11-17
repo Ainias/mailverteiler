@@ -1,7 +1,7 @@
 import view from "../../html/Site/editListsSite.html";
 import {DataManager} from "cordova-sites/dist/client/js/DataManager";
 import {MenuSite} from "cordova-sites/dist/client/js/Context/MenuSite";
-import {Form} from "cordova-sites";
+import {App, Form, Toast} from "cordova-sites";
 import {SelectPersonFragment} from "../Fragment/SelectPersonFragment";
 import {JsonHelper} from "js-helper/dist/shared/JsonHelper";
 import {RIGHTS} from "../../../shared/RIGHTS";
@@ -82,13 +82,14 @@ export class EditListSite extends MenuSite {
             "subscriber": row.getData().mailmanId,
             "subscriberMail": row.getData().email,
         });
-        if (res.member_id){
+        if (res.member_id) {
             let data = row.getData();
-            row.delete();
-            if (role === "member"){
-                this._memberFragment.addData([data]);
+            if (role === "member") {
+                row.delete();
             }
-            else {
+            if (role === "member") {
+                this._memberFragment.addData([data]);
+            } else {
                 this._ownerFragment.addData([data]);
             }
         }
@@ -102,10 +103,12 @@ export class EditListSite extends MenuSite {
             "list_id": this._list.list_id,
             "subscriberMail": row.getData().email
         })
-        if (JsonHelper.deepEqual({}, res)){
+        if (JsonHelper.deepEqual({}, res)) {
             let data = row.getData();
             row.delete();
-            this._personFragment.addData([data]);
+            if (role === "member") {
+                this._personFragment.addData([data]);
+            }
         }
         this.removeLoadingSymbol();
     }
@@ -114,18 +117,21 @@ export class EditListSite extends MenuSite {
         let res = super.onViewLoaded();
 
         let form = new Form(this.findBy("#list-form"), async values => {
-
             this._list["description"] = values["description"];
             this._list["display_name"] = values["display_name"];
             this._list["subject_prefix"] = values["subject_prefix"];
-            if (values["pw"]){
+            if (values["pw"]) {
                 this._list["pw"] = values["pw"];
             }
             this._list["default_member_action"] = values["default_member_action"];
             this._list["default_nonmember_action"] = values["default_nonmember_action"];
 
             let res = await DataManager.send("list", this._list);
-            await this.finish(res);
+            if (res.title && res.title.startsWith("400") && res.description) {
+                new Toast(res.description, Toast.DEFAULT_DURATION, false).show();
+            } else {
+                await this.finish(res);
+            }
         });
         // console.log("list", this._list);
         await form.setValues(this._list);
@@ -133,3 +139,7 @@ export class EditListSite extends MenuSite {
         return res;
     }
 }
+
+App.addInitialization(app => {
+    app.addDeepLink("editList", EditListSite);
+})
