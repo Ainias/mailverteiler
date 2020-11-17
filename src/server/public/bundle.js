@@ -83851,8 +83851,8 @@ cordova_sites_dist_client__WEBPACK_IMPORTED_MODULE_2__["App"].addInitialization(
 
 });
 
-cordova_sites_dist_client__WEBPACK_IMPORTED_MODULE_2__["DataManager"]._basePath = 'http://localhost:3002/api/v1/';
-cordova_sites_dist_client__WEBPACK_IMPORTED_MODULE_2__["DataManager"]._assetBasePath = '';
+cordova_sites_dist_client__WEBPACK_IMPORTED_MODULE_2__["DataManager"]._basePath = 'https://smd-aachen.de/mail/api/v1/';
+cordova_sites_dist_client__WEBPACK_IMPORTED_MODULE_2__["DataManager"]._assetBasePath = './';
 cordova_sites_dist_client__WEBPACK_IMPORTED_MODULE_2__["DataManager"].onlineCallback = isOnline => {
     if (!isOnline){
         new cordova_sites_dist_client__WEBPACK_IMPORTED_MODULE_2__["Toast"]("not online!").show();

@@ -109,7 +109,7 @@ let moduleExports = {
         new webpack.DefinePlugin({
             __HOST_ADDRESS__: "'" + (process.env.HOST_URI || ((process.env.HOST || ("http://" + getIp())) + ":" + (process.env.REQUEST_PORT || process.env.PORT || "3000") + "/api/v1/")) + "'",
             __SYNCHRONIZE_DB__: mode !== "production",
-            __ASSET_BASE_PATH__: "'"+process.env.ASSET_BASE_PATH+"'"
+            __ASSET_BASE_PATH__: "'" + process.env.ASSET_BASE_PATH + "'"
         }),
 
         // new webpack.ProvidePlugin({
@@ -239,7 +239,9 @@ if (mode === "production") {
         //PostCSS ist nicht wichtig, autoprefixer schon. Fügt Präfixes hinzu (Bsp.: -webkit), wo diese benötigt werden
         loader: 'postcss-loader',
         options: {
-            plugins: [require('autoprefixer')()]
+            postcssOptions: {
+                plugins: [require('autoprefixer')()]
+            }
         }
     });
 
