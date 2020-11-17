@@ -76,6 +76,7 @@ app.use(function (req, res, next) {
 app.use('/mail/api', routes);
 app.use('/api', routes);
 app.get('/newMailTemplate', (req, res) => {
+    res.setHeader("content-type", 'text/plain; charset="UTF-8"');
     res.send("Eine E-Mail wartet auf Approval für die Liste $display_name. \n\n"+process.env.CHECK_MAIL_SITE);
 });
 
