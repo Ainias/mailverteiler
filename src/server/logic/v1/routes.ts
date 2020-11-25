@@ -30,5 +30,7 @@ routerV1.post("/deleteLists", errorHandler(UserManager.checkAccess(RIGHTS.EDIT_L
 routerV1.get("/synchronise", errorHandler(UserManager.checkAccess(RIGHTS.EDIT_USER), UserManager), errorHandler(ListController.synchronise, ListController));
 routerV1.post("/mails", errorHandler(ListController.getHoldMail, ListController));
 routerV1.post("/handleMail", errorHandler(ListController.handleMessage, ListController));
+routerV1.post("/deletePassword", errorHandler(UserManager.checkAccess(RIGHTS.EDIT_LIST), UserManager), errorHandler(ListController.deletePassword, ListController));
+routerV1.get("/synchroniseLists", errorHandler(UserManager.checkAccess(RIGHTS.EDIT_USER), UserManager), errorHandler(ListController.synchronizeLists, ListController));
 
 export {routerV1};

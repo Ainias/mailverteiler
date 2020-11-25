@@ -24,10 +24,11 @@
   "name": "Name",
   "description": "Beschreibung",
   "subject_prefix": "Betreff-Präfix",
-  "moderator password": "Moderator Passwort",
+  "moderator password": "Moderator Passwort (Mind. 8 Zeichen)",
   "allow members to send mails": "Mitgliedern erlauben, Mails zu senden",
   "accept": "Akzeptieren",
   "hold": "Halten",
+  "reject": "Zurückweisen",
   "drop": "Löschen",
   "allow non-members to send mails": "Nicht-Mitgliedern erlauben, Mails zu senden",
 
@@ -35,7 +36,12 @@
   "members": "Mitglieder",
   "non-members": "Keine Mitglieder",
 
-  "wrong password": "Falsches Passwort!",
+  "wrong password!": "Falsches Passwort!",
   "modified entry": "Eintrag bearbeitet",
-  "added entry": "Eintrag hinzugefügt"
+  "added entry": "Eintrag hinzugefügt",
+  "e-mails in hold": "E-Mails zu bearbeiten:",
+  "synchronised!": "Synchronisiert!",
+
+  "reject reason": "Zurückweisungsgrund:",
+  "leave empty for no reason": "Leer lassen für keinen Grund"
 }

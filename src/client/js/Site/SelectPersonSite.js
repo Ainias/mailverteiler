@@ -77,6 +77,10 @@ export class SelectPersonSite extends MenuSite {
                     res = await DataManager.load("synchronise");
                 } while (res.askAgain);
                 if (res.success) {
+
+                    res = await DataManager.load("synchroniseLists");
+                    console.log(res);
+
                     new Toast("synchronised!").show();
                 } else {
                     new Toast(res.message).show();

@@ -79,6 +79,10 @@ app.get('/newMailTemplate', (req, res) => {
     res.setHeader("content-type", 'text/plain; charset="UTF-8"');
     res.send("Eine E-Mail wartet auf Approval fuer die Liste $display_name. \n\n"+process.env.CHECK_MAIL_SITE);
 });
+app.get('/footerTemplate', (req, res) => {
+    res.setHeader("content-type", 'text/plain; charset="UTF-8"');
+    res.send("--\nHochschul-SMD Aachen\nhttp://www.smd-aachen.de\n\nFalls du keine Mails mehr bekommen möchtest, schreib bitte eine E-Mail mit der Bitte um Abmeldung an kontakt@smd-aachen.de");
+});
 
 app.use(express.static(path.resolve(path.dirname(process.argv[1]), "public")));
 app.use("/mail", express.static(path.resolve(path.dirname(process.argv[1]), "public")));

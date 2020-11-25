@@ -17,7 +17,7 @@ import {PersonInit1000000006000} from "../../shared/model/migrations/PersonInit"
 
 import "cordova-sites-user-management/dist/client"
 
-import {CheckMailSite} from "./Site/CheckMailSite";
+import {CheckMailSite} from "./Site/CheckMailSite.ts";
 import {UserManager} from "cordova-sites-user-management/dist/client/js/UserManager";
 
 window["JSObject"] = Object;

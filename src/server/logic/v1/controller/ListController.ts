@@ -161,13 +161,21 @@ export class ListController extends SyncController {
         let listName = Helper.nonNull(req.query.listname, null);
         let api = MailmanApi.getInstance();
 
-        let lists: any = await api.getLists(listName, req.query.page, req.query.count);
-        if (listName && lists) {
+        let list: any = await api.getLists(listName, req.query.page, req.query.count);
+        if (listName && list) {
             let config: any = await api.getListConfig(listName);
-            lists = Object.assign(config, lists);
+            list = Object.assign(config, list);
+
+            list.pw = false;
+            const listModel = await MailingList.findOne({"mailmanId": list.list_id});
+            if (listModel !== null) {
+                list.pw = true;
+                console.log("lists", listModel);
+
+            }
         }
 
-        return res.json(lists)
+        return res.json(list)
     }
 
     static async modifyList(req, res) {
@@ -192,7 +200,6 @@ export class ListController extends SyncController {
         let mail = name + "@" + DOMAIN_NAME;
         if (lists) {
             list = lists;
-
             if (list.fqdn_listname !== mail) {
                 await api.updateList(list.list_id, "display_name", name);
             }
@@ -301,6 +308,7 @@ export class ListController extends SyncController {
         let request = req.body.request;
         let listPassword = req.body.pw + "";
         let action = req.body.action;
+        const reason = req.body.reason;
 
         let listModel = await MailingList.findOne({"mailmanId": listId});
         if (listModel === null) {
@@ -313,7 +321,7 @@ export class ListController extends SyncController {
         }
 
         let api = MailmanApi.getInstance();
-        let result = await api.handleMessage(listId, request, action)
+        let result = await api.handleMessage(listId, request, action, reason)
         if (result === undefined) {
             return res.json({success: true});
         } else {
@@ -388,5 +396,61 @@ export class ListController extends SyncController {
         }
 
         return res.json(result);
+    }
+
+    static async synchronizeLists(req, res){
+        const lists = {
+            "ma": "malist",
+            "isa":"isalist",
+            "altfreunde":"altfreund",
+            "hauskreise": "hk"
+        }
+
+        let api = MailmanApi.getInstance();
+        await Helper.asyncForEach(Object.keys(lists), async list => {
+            let listId = list+"@"+process.env.DOMAIN_NAME;
+            let mailmanList = await api.getLists(listId);
+
+            //CreateList
+            if (mailmanList.title && mailmanList.title === "404 Not Found"){
+                mailmanList = await api.addList(listId);
+                if (mailmanList === undefined) {
+                    await api.updateList(listId, "description", "");
+                    await api.updateList(listId, "subject_prefix", "["+list+"]");
+                    await api.updateList(listId, "default_member_action", "hold");
+                    await api.updateList(listId, "default_nonmember_action", "hold");
+                    await api.updateList(listId, "respond_to_post_requests", false);
+
+                }
+            }
+
+            const personsThatShouldBeInList = await EasySyncServerDb.getInstance().rawQuery("SELECT mailmanId, email FROM person WHERE "+lists[list]+" >= 1");
+            let currentMembers = await api.getListMembers(listId);
+            currentMembers = Array.isArray(currentMembers.entries) ? currentMembers.entries : [];
+
+            const currentMemberMails = currentMembers.map(m => m.email);
+            const personsToAdd = personsThatShouldBeInList.filter(person => currentMemberMails.indexOf(person.email) === -1);
+
+            console.log("has to add "+personsToAdd.length+ " persons to maillist "+listId);
+
+            listId = list+"."+process.env.DOMAIN_NAME;
+            await Helper.asyncForEach(personsToAdd, async person => {
+                const res = await api.joinList(listId, person.mailmanId, null, null, true, true, true, false);
+            });
+            console.log("done adding "+personsToAdd.length+ " persons to maillist "+listId);
+        }, true);
+        return res.json({success: true});
+    }
+
+    static async deletePassword(req, res) {
+        const listId = req.body.list_id;
+
+        const model = await MailingList.findOne({"mailmanId": listId});
+        if (model){
+            let db: EasySyncServerDb = await EasySyncServerDb.getInstance();
+            db.deleteEntity(model, MailingList, true);
+        }
+
+        return res.json(true);
     }
 }

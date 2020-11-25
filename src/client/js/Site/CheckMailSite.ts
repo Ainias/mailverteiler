@@ -1,14 +1,23 @@
 import {MenuSite} from "cordova-sites/dist/client/js/Context/MenuSite";
 
-import view from "../../html/Site/checkMailSite.html"
+const view = require("../../html/Site/checkMailSite.html")
 import {App} from "cordova-sites/dist/client/js/App";
 import {DataManager} from "cordova-sites/dist/client/js/DataManager";
 import {Form} from "cordova-sites/dist/client/js/Form";
 import {JsonHelper} from "js-helper/dist/shared/JsonHelper";
 import {Toast} from "cordova-sites/dist/client/js/Toast/Toast";
 import {ViewHelper} from "js-helper/dist/client/ViewHelper";
+import {Translator} from "cordova-sites";
+import {RejectReasonDialog} from "../Dialog/RejectReasonDialog";
 
 export class CheckMailSite extends MenuSite {
+    private _list: any;
+    private _emailContainer: HTMLElement;
+    private _emailTemplate: HTMLElement;
+    private _passwordSection: HTMLElement;
+    private _emailSection: HTMLElement;
+    private _pw: string;
+
     constructor(siteManager) {
         super(siteManager, view);
     }
@@ -55,16 +64,29 @@ export class CheckMailSite extends MenuSite {
         ViewHelper.removeAllChildren(this._emailContainer);
         if (mails.entries) {
             mails.entries.forEach(mail => {
-                let mailElem = this._emailTemplate.cloneNode(true);
-                mailElem.querySelector(".email-text").innerText = CheckMailSite._prepareMailText(mail.msg);
+                const mailElem = this._emailTemplate.cloneNode(true) as HTMLElement;
+                (<HTMLElement>mailElem.querySelector(".email-text")).innerText = CheckMailSite._prepareMailText(mail.msg);
                 mailElem.querySelectorAll(".button").forEach(button => {
                     button.addEventListener("click", async (e) => {
                         this.showLoadingSymbol();
+
+                        const action = (<HTMLElement>e.target).dataset["action"];
+                        let reason: any = "";
+                        if (action === "reject") {
+                            reason = await new RejectReasonDialog().show();
+                            console.log("reason", reason);
+                        }
+                        if (reason === null){
+                            this.removeLoadingSymbol();
+                            return;
+                        }
+
                         let res = await DataManager.send("handleMail", {
                             list: this._list,
                             pw: this._pw,
                             request: mail.request_id,
-                            action: e.target.dataset["action"]
+                            action: action,
+                            reason: reason,
                         })
                         this.removeLoadingSymbol();
                         if (res && res.success && res.success === true) {
@@ -76,6 +98,7 @@ export class CheckMailSite extends MenuSite {
                 })
                 this._emailContainer.appendChild(mailElem);
             })
+            Translator.getInstance().updateTranslations(this._emailContainer);
         }
     }
 
@@ -98,4 +121,4 @@ export class CheckMailSite extends MenuSite {
 
 App.addInitialization(app => {
     app.addDeepLink("checkMail", CheckMailSite);
-})
+});

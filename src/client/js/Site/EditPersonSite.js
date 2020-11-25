@@ -9,7 +9,7 @@ import {ViewHelper} from "js-helper/dist/client/ViewHelper";
 import {RIGHTS} from "../../../shared/RIGHTS";
 import {UserSite} from "cordova-sites-user-management/dist/client/js/Context/UserSite";
 import {App} from "cordova-sites/dist/client/js/App";
-import {CheckMailSite} from "./CheckMailSite";
+import {CheckMailSite} from "./CheckMailSite.ts";
 import {DateHelper} from "js-helper";
 
 export class EditPersonSite extends ModifyEntitySite {

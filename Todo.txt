@@ -1,0 +1,12 @@
+- Erinnerungsmail Text umgestalten
+
+- Spam-Filter
+- Filter mit Listen bei Personen
+- Maximalgröße von E-Mails feststellen - Attachment von 9,8mb war okay, evtl noch mal nachschauen
+- Nachrichtenfooter anpassen - Muss noch nach Update angepasst werden
+- Synchronisation einer frisch importierten Datenbank
+
+Listen:
+- Altfreunde
+- HK (speziell) - Ist HK 13 speziell?
+

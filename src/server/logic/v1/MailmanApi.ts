@@ -23,7 +23,7 @@ export class MailmanApi {
         this._instance = new MailmanApi(rootUrl, username, password);
     }
 
-    private async _fetch(path) {
+    private async _fetch(path): Promise<any> {
         return new Promise((resolve, reject) => {
             let url = new URL(this._rootUrl + path);
             let options = {
@@ -463,13 +463,18 @@ export class MailmanApi {
         return this._fetch(url);
     }
 
-    async handleMessage(list, id, action) {
+    async handleMessage(list, id, action, reason?) {
         let actions = ["discard", "reject", "defer", "accept"];
         if (actions.indexOf(action) === -1) {
             throw new Error("undefined action: " + action);
         }
 
-        return this._send("lists/" + list + "/held/" + id, {"action": action});
+        let params = {"action": action};
+        if (Helper.isNotNull(reason) && reason.trim() !== "") {
+            params["comment"] = reason;
+        }
+
+        return this._send("lists/" + list + "/held/" + id, params);
     }
 
 

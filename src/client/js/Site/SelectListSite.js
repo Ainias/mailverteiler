@@ -4,7 +4,7 @@ import view from "../../html/Site/selectListSite.html"
 import {MenuAction} from "cordova-sites/dist/client/js/Context/Menu/MenuAction/MenuAction";
 import * as Tabulator from "tabulator-tables";
 import {DataManager} from "cordova-sites/dist/client/js/DataManager";
-import {EditListSite} from "./EditListSite";
+import {EditListSite} from "./EditListSite.ts";
 import {Toast} from "cordova-sites/dist/client/js/Toast/Toast";
 import {App} from "cordova-sites/dist/client/js/App";
 import {Helper} from "js-helper/dist/shared/Helper";

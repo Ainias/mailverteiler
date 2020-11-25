@@ -22,14 +22,18 @@
                     <span class="translation">subject_prefix</span>
                 </label>
             </div>
-            <div class="grid-x">
-                <label class="columns small-12">
+            <div class="flex-container">
+                <label class="grow">
                     <input type="text" name='pw'>
                     <span class="translation">moderator password</span>
                 </label>
+                <button class="button delete-password-button">X</button>
+                <!--                <div class="small-4">-->
+                <!--                    -->
+                <!--                </div>-->
             </div>
             <div class="grid-x">
-                <label class="small-12" >
+                <label class="small-12">
                     <span class="translation">Allow members to send mails</span>
                     <select name="default_member_action">
                         <option value="accept" class="translation">Accept</option>
@@ -39,12 +43,12 @@
                 </label>
             </div>
             <div class="grid-x">
-                <label class="small-12" >
+                <label class="small-12">
                     <span class="translation">Allow non-members to send mails</span>
                     <select name="default_nonmember_action">
-                        <option value="defer" class="translation">Defer</option>
                         <option value="accept" class="translation">Accept</option>
                         <option value="hold" class="translation" selected>Hold</option>
+                        <option value="discard" class="translation">Drop</option>
                     </select>
                 </label>
             </div>
@@ -54,13 +58,13 @@
         </form>
     </section>
     <hr/>
-    <section id = "owner-section">
+    <section id="owner-section">
         <h3 class="translation">owners</h3>
     </section>
-    <section id = "member-section">
+    <section id="member-section">
         <h3 class="translation">members</h3>
     </section>
-    <section id = "persons-section">
+    <section id="persons-section">
         <h3 class="translation">non-members</h3>
     </section>
 </article>
