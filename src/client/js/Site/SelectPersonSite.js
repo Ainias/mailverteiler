@@ -6,7 +6,7 @@ import {MenuAction} from "cordova-sites/dist/client/js/Context/Menu/MenuAction/M
 import {StartSiteMenuAction} from "cordova-sites/dist/client/js/Context/Menu/MenuAction/StartSiteMenuAction";
 import {SelectListSite} from "./SelectListSite";
 import {Toast} from "cordova-sites/dist/client/js/Toast/Toast";
-import {SelectPersonFragment} from "../Fragment/SelectPersonFragment";
+import {SelectPersonFragment} from "../Fragment/SelectPersonFragment.ts";
 import {ConfirmDialog} from "cordova-sites/dist/client/js/Dialog/ConfirmDialog";
 import {DataManager} from "cordova-sites/dist/client/js/DataManager";
 import {UserSite} from "cordova-sites-user-management/dist/client/js/Context/UserSite";

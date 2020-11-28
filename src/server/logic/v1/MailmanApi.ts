@@ -34,7 +34,6 @@ export class MailmanApi {
 
             let req = https.get(options, res => {
                 res.setEncoding("utf8");
-                console.log(res.statusCode);
                 let body = "";
                 res.on("data", data => {
                     body += data;
@@ -59,7 +58,6 @@ export class MailmanApi {
     }
 
     private async _send(path, data?, method?) {
-
         if (!data) {
             return this._fetch(path);
         }

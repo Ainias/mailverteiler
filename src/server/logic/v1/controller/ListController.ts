@@ -2,7 +2,8 @@ import {SyncController} from "cordova-sites-user-management/dist/server/v1/contr
 import {MailmanApi} from "../MailmanApi";
 import {Person} from "../../../../shared/model/Person";
 import {Helper} from "js-helper/dist/shared/Helper";
-import {In, IsNull, Not} from "typeorm/index";
+import {In, IsNull, Not, QueryBuilder, SelectQueryBuilder} from "typeorm/index";
+import * as typeorm from "typeorm";
 import {EasySyncServerDb} from "cordova-sites-easy-sync/dist/server/EasySyncServerDb";
 import {MailingList} from "../../../../shared/model/MailingList";
 
@@ -79,11 +80,11 @@ export class ListController extends SyncController {
         let queries = JSON.parse(req.query.queries);
         if (queries.length >= 1 && queries[0].model === Person.getSchemaName()) {
             let mails: any = [];
-            let filterLater = false;
+            const api = MailmanApi.getInstance();
+
+            const queryBuilder = <SelectQueryBuilder<any>>await EasySyncServerDb.getInstance().createQueryBuilder(Person);
             if (Helper.isNotNull(queries[0].member)) {
-                let api = MailmanApi.getInstance();
                 let members: any = [];
-                let where = queries[0].where;
 
                 if (queries[0].list) {
                     if (queries[0].member === "member") {
@@ -94,7 +95,6 @@ export class ListController extends SyncController {
                         members = await api.getListModerators(queries[0].list);
                     } else if (queries[0].member === false) {
                         members = await api.getListMembers(queries[0].list);
-                        members = members.entries ? members.entries : [];
                     }
                 } else {
                     members = [];
@@ -104,15 +104,13 @@ export class ListController extends SyncController {
 
                 if (members.length > 0) {
                     mails = members.map(m => m.email);
-
-                    let filter = (queries[0].member !== false) ? In(mails) : Not(In(mails));
-                    if (where["email"]) {
-                        filterLater = true;
+                    if (queries[0].member !== false) {
+                        queryBuilder.andWhere("Person.email IN(:...mailsList)", {mailsList: mails})
                     } else {
-                        where["email"] = filter;
+                        queryBuilder.andWhere("Person.email NOT IN(:...mailsNotList)", {mailsNotList: mails})
                     }
-                    queries[0].where = where;
                 } else if (queries[0].member !== false) {
+                    //End early since there are no members or moderators
                     return res.json({
                         "nextOffset": -1,
                         "newLastSynced": new Date().getTime(),
@@ -125,12 +123,86 @@ export class ListController extends SyncController {
                         }]
                     });
                 }
-                // req.query.queries = JSON.stringify(queries);
             }
-            let result: any = await super._execQuery(queries[0], req.query.offset, req);
-            if (filterLater) {
-                result.entities = result.entities.filter(person => (mails.indexOf(person.email) === -1) === (queries[0].member === false))
+
+            const membersOf = {};
+
+            const addressesIn = [];
+            const addressesNotIn = [];
+            await Helper.asyncForEach(Object.keys(queries[0].memberships), async list => {
+                let members = await api.getListMembers(list);
+                members = Array.isArray(members.entries) ? members.entries : [];
+                const mails = members.map(m => m.email);
+
+                membersOf[list] = mails;
+
+                if (queries[0].memberships[list]) {
+                    addressesIn.push(...mails);
+                } else {
+                    addressesNotIn.push(...mails);
+                }
+            });
+
+            if (addressesIn.length > 0) {
+                queryBuilder.andWhere("Person.email IN(:...addressesIn)", {addressesIn: addressesIn})
             }
+            if (addressesNotIn.length > 0) {
+                queryBuilder.andWhere("Person.email NOT IN(:...addressesNotIn)", {addressesNotIn: addressesNotIn})
+            }
+
+            const query = queries[0]
+            let offset = req.query.offset;
+
+            let lastSynced = Helper.nonNull(query.lastSynced, 0);
+            let where = Helper.nonNull(query.where, {});
+            let orderBy = Helper.nonNull(query.orderBy, {});
+
+            let dateLastSynced = new Date(parseInt(lastSynced || 0));
+            let newDateLastSynced = new Date().getTime();
+
+            orderBy = Helper.nonNull(orderBy, {"id": "ASC"});
+
+            offset = parseInt(offset);
+
+            where = where || {};
+
+            queryBuilder.andWhere("Person.updatedAt >= :lastSync", {"lastSync": dateLastSynced});
+            Object.keys(where).forEach((key, i) => {
+                if (where[key] && where[key].type && where[key].value && where[key].type === "like") {
+                    queryBuilder.andWhere("Person." + key + " LIKE :val", {val: where[key].value})
+                } else {
+                    const param = {};
+                    param["val"+i] = (where[key].value ? where[key].value : where[key]);
+                    queryBuilder.andWhere(key + " = :val"+i, param)
+                }
+            });
+            queryBuilder.orderBy(orderBy);
+            queryBuilder.limit(this.MAX_MODELS_PER_RUN);
+            queryBuilder.offset(offset);
+            let entities = await queryBuilder.getMany()
+
+            if (typeof Person.prepareSync === "function") {
+                entities = await Person.prepareSync(entities);
+            }
+
+            entities = entities.map(e => e.toJSON());
+
+            const listNames = Object.keys(queries[0].memberships);
+            entities.forEach(p => {
+                const mail = p.email;
+                listNames.forEach(list => {
+                    p["list-"+list] = (membersOf[list].indexOf(mail) >= 0)
+                })
+            })
+
+            let result: any = {
+                "model": Person.getSchemaName(),
+                "newLastSynced": newDateLastSynced,
+                "entities": entities,
+                "nextOffset": offset + entities.length,
+                "shouldAskAgain": entities.length === this.MAX_MODELS_PER_RUN
+            };
+
             result = {
                 "nextOffset": result.nextOffset,
                 "newLastSynced": new Date().getTime(),
@@ -161,21 +233,21 @@ export class ListController extends SyncController {
         let listName = Helper.nonNull(req.query.listname, null);
         let api = MailmanApi.getInstance();
 
-        let list: any = await api.getLists(listName, req.query.page, req.query.count);
-        if (listName && list) {
+        let lists: any = await api.getLists(listName, req.query.page, req.query.count);
+        if (listName && lists) {
             let config: any = await api.getListConfig(listName);
-            list = Object.assign(config, list);
+            lists = Object.assign(config, lists);
 
-            list.pw = false;
-            const listModel = await MailingList.findOne({"mailmanId": list.list_id});
+            lists.pw = false;
+            const listModel = await MailingList.findOne({"mailmanId": lists.list_id});
             if (listModel !== null) {
-                list.pw = true;
+                lists.pw = true;
                 console.log("lists", listModel);
 
             }
         }
 
-        return res.json(list)
+        return res.json(lists)
     }
 
     static async modifyList(req, res) {
@@ -398,25 +470,25 @@ export class ListController extends SyncController {
         return res.json(result);
     }
 
-    static async synchronizeLists(req, res){
+    static async synchronizeLists(req, res) {
         const lists = {
             "ma": "malist",
-            "isa":"isalist",
-            "altfreunde":"altfreund",
+            "isa": "isalist",
+            "altfreunde": "altfreund",
             "hauskreise": "hk"
         }
 
         let api = MailmanApi.getInstance();
         await Helper.asyncForEach(Object.keys(lists), async list => {
-            let listId = list+"@"+process.env.DOMAIN_NAME;
+            let listId = list + "@" + process.env.DOMAIN_NAME;
             let mailmanList = await api.getLists(listId);
 
             //CreateList
-            if (mailmanList.title && mailmanList.title === "404 Not Found"){
+            if (mailmanList.title && mailmanList.title === "404 Not Found") {
                 mailmanList = await api.addList(listId);
                 if (mailmanList === undefined) {
                     await api.updateList(listId, "description", "");
-                    await api.updateList(listId, "subject_prefix", "["+list+"]");
+                    await api.updateList(listId, "subject_prefix", "[" + list + "]");
                     await api.updateList(listId, "default_member_action", "hold");
                     await api.updateList(listId, "default_nonmember_action", "hold");
                     await api.updateList(listId, "respond_to_post_requests", false);
@@ -424,20 +496,19 @@ export class ListController extends SyncController {
                 }
             }
 
-            const personsThatShouldBeInList = await EasySyncServerDb.getInstance().rawQuery("SELECT mailmanId, email FROM person WHERE "+lists[list]+" >= 1");
+            const personsThatShouldBeInList = await EasySyncServerDb.getInstance().rawQuery("SELECT mailmanId, email FROM person WHERE " + lists[list] + " >= 1");
             let currentMembers = await api.getListMembers(listId);
             currentMembers = Array.isArray(currentMembers.entries) ? currentMembers.entries : [];
 
             const currentMemberMails = currentMembers.map(m => m.email);
             const personsToAdd = personsThatShouldBeInList.filter(person => currentMemberMails.indexOf(person.email) === -1);
 
-            console.log("has to add "+personsToAdd.length+ " persons to maillist "+listId);
-
-            listId = list+"."+process.env.DOMAIN_NAME;
+            console.log("has to add " + personsToAdd.length + " persons to maillist " + listId);
+            listId = list + "." + process.env.DOMAIN_NAME;
             await Helper.asyncForEach(personsToAdd, async person => {
                 const res = await api.joinList(listId, person.mailmanId, null, null, true, true, true, false);
             });
-            console.log("done adding "+personsToAdd.length+ " persons to maillist "+listId);
+            console.log("done adding " + personsToAdd.length + " persons to maillist " + listId);
         }, true);
         return res.json({success: true});
     }
@@ -446,7 +517,7 @@ export class ListController extends SyncController {
         const listId = req.body.list_id;
 
         const model = await MailingList.findOne({"mailmanId": listId});
-        if (model){
+        if (model) {
             let db: EasySyncServerDb = await EasySyncServerDb.getInstance();
             db.deleteEntity(model, MailingList, true);
         }
