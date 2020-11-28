@@ -1526,11 +1526,7 @@ class SyncJob {
                         }
                     });
                 }
-                else if ((relations[relation].type === "many-to-one"
-                    || (relations[relation].type === "one-to-one" && relations[relation].joinColumn))
-                //DO not check for a value of the relation here. Else If the first entity has no value set, the field
-                // will not be set and therefore ignored for all other entites too
-                ) {
+                else if ((relations[relation].type === "many-to-one" || (relations[relation].type === "one-to-one" && relations[relation].joinColumn)) && entity[relation]) {
                     let fieldName;
                     if (relations[relation].joinColumn && relations[relation].joinColumn.name) {
                         fieldName = relations[relation].joinColumn.name;
@@ -1619,7 +1615,7 @@ class SyncJob {
             tableName = shared_1.Helper.toSnakeCase(tableName);
             let columns = schemaDefinition.columns;
             //Get fields from entity for including relation fields
-            const fields = Object.keys(changedEntities[0]);
+            let fields = Object.keys(changedEntities[0]);
             let values = [];
             let valueStrings = [];
             yield shared_1.Helper.asyncForEach(changedEntities, (entity) => __awaiter(this, void 0, void 0, function* () {
@@ -2303,7 +2299,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(__webpack_require__(/*! ./shared/EasySyncBaseModel */ "./node_modules/cordova-sites-easy-sync/dist/shared/EasySyncBaseModel.js"), exports);
 __exportStar(__webpack_require__(/*! ./shared/EasySyncPartialModel */ "./node_modules/cordova-sites-easy-sync/dist/shared/EasySyncPartialModel.js"), exports);
 __exportStar(__webpack_require__(/*! ./shared/FileMedium */ "./node_modules/cordova-sites-easy-sync/dist/shared/FileMedium.js"), exports);
-__exportStar(__webpack_require__(/*! ./shared/migrations/AddFileMediumMigration */ "./node_modules/cordova-sites-easy-sync/dist/shared/migrations/AddFileMediumMigration.js"), exports);
 //# sourceMappingURL=shared.js.map
 
 /***/ }),
@@ -2708,51 +2703,6 @@ FileMedium.PUBLIC_PATH = "./";
 FileMedium.SCHEMA_NAME = "FileMedium";
 BaseDatabase_1.BaseDatabase.addModel(FileMedium);
 //# sourceMappingURL=FileMedium.js.map
-
-/***/ }),
-
-/***/ "./node_modules/cordova-sites-easy-sync/dist/shared/migrations/AddFileMediumMigration.js":
-/*!***********************************************************************************************!*\
-  !*** ./node_modules/cordova-sites-easy-sync/dist/shared/migrations/AddFileMediumMigration.js ***!
-  \***********************************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.AddFileMediumMigration1000000011000 = void 0;
-const js_helper_1 = __webpack_require__(/*! js-helper */ "./node_modules/js-helper/dist/shared.js");
-const FileMedium_1 = __webpack_require__(/*! ../FileMedium */ "./node_modules/cordova-sites-easy-sync/dist/shared/FileMedium.js");
-class AddFileMediumMigration1000000011000 {
-    down(queryRunner) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return Promise.resolve(undefined);
-        });
-    }
-    up(queryRunner) {
-        return __awaiter(this, void 0, void 0, function* () {
-            let table = js_helper_1.MigrationHelper.createTableFromModelClass(FileMedium_1.FileMedium);
-            table.columns.forEach(column => {
-                if (column.name === "src") {
-                    column.type = js_helper_1.MigrationHelper.isServer() ? "MEDIUMTEXT" : "TEXT";
-                }
-            });
-            yield queryRunner.createTable(table);
-        });
-    }
-}
-exports.AddFileMediumMigration1000000011000 = AddFileMediumMigration1000000011000;
-//# sourceMappingURL=AddFileMediumMigration.js.map
 
 /***/ }),
 
@@ -5626,6 +5576,7 @@ class Context {
      * @param view
      */
     constructor(view) {
+        this.onViewLoadedCalled = false;
         this._pauseParameters = [];
         this._view = null;
         this._fragments = [];
@@ -5635,6 +5586,7 @@ class Context {
             this._view = siteContent;
             return siteContent;
         }).catch(e => {
+            // @ts-ignore
             this._viewLoadedPromise.reject(e);
         });
     }
@@ -5651,12 +5603,24 @@ class Context {
     onConstruct(constructParameters) {
         return __awaiter(this, void 0, void 0, function* () {
             this._state = Context.STATE_CONSTRUCTED;
+            this.constructParameters = constructParameters;
             let onConstructPromises = [];
             for (let k in this._fragments) {
                 onConstructPromises.push(this._fragments[k].onConstruct.apply(this._fragments[k], [constructParameters]));
                 onConstructPromises.push(this._fragments[k]._viewPromise);
             }
             return Promise.all(onConstructPromises);
+        });
+    }
+    callOnViewLoaded() {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!this.onViewLoadedCalled) {
+                this.onViewLoadedCalled = true;
+                const res = yield this.onViewLoaded();
+                // @ts-ignore
+                this._viewLoadedPromise.resolve(res);
+            }
+            return this._viewLoadedPromise;
         });
     }
     /**
@@ -5667,10 +5631,10 @@ class Context {
      */
     onViewLoaded() {
         return __awaiter(this, void 0, void 0, function* () {
-            this._state = Context.STATE_CONSTRUCTED;
+            this._state = Context.STATE_VIEW_LOADED;
             let onViewLoadedPromises = [];
             for (let k in this._fragments) {
-                onViewLoadedPromises.push(this._fragments[k]._viewPromise.then(() => this._fragments[k].onViewLoaded()).then(() => this._fragments[k]._viewLoadedPromise.resolve()));
+                onViewLoadedPromises.push(this._fragments[k]._viewPromise.then(() => this._fragments[k].callOnViewLoaded()).then(() => this._fragments[k]._viewLoadedPromise.resolve()));
             }
             return Promise.all(onViewLoadedPromises);
         });
@@ -5748,6 +5712,19 @@ class Context {
             res[0].querySelector(viewQuery).appendChild(res[1]);
             return res[0];
         }).catch(e => console.error(e));
+        if (this._state >= Context.STATE_CONSTRUCTED) {
+            fragment.onConstruct(this.constructParameters);
+        }
+        if (this._state >= Context.STATE_VIEW_LOADED) {
+            Promise.all([this._viewLoadedPromise, fragment.getViewPromise()]).then(() => fragment.callOnViewLoaded());
+        }
+        if (this._state >= Context.STATE_RUNNING) {
+            fragment._viewLoadedPromise.then(() => {
+                if (this._state >= Context.STATE_RUNNING) {
+                    fragment.onStart();
+                }
+            });
+        }
     }
     /**
      * Findet ein Element anhand eines Selectors
@@ -5808,17 +5785,11 @@ class Context {
 exports.Context = Context;
 Context.STATE_CREATED = 0;
 Context.STATE_CONSTRUCTED = 1;
-Context.STATE_RUNNING = 2;
-Context.STATE_PAUSED = 3;
-Context.STATE_DESTROYING = 4;
-Context.STATE_DESTROYED = 5;
-// Die States für den Context
-Context.STATE_CREATED = 0;
-Context.STATE_CONSTRUCTED = 1;
-Context.STATE_RUNNING = 2;
-Context.STATE_PAUSED = 3;
-Context.STATE_DESTROYING = 4;
-Context.STATE_DESTROYED = 5;
+Context.STATE_VIEW_LOADED = 2;
+Context.STATE_RUNNING = 3;
+Context.STATE_PAUSED = 4;
+Context.STATE_DESTROYING = 5;
+Context.STATE_DESTROYED = 6;
 //# sourceMappingURL=Context.js.map
 
 /***/ }),
@@ -7283,9 +7254,28 @@ class NavbarFragment extends AbstractFragment_1.AbstractFragment {
                 requestAnimationFrame(() => {
                     let heightElement = navbarElem.querySelector(".grid-container");
                     navbarElem.style = "min-height:" + heightElement.getBoundingClientRect().height + "px";
+                    if ("ResizeObserver" in window) {
+                        // @ts-ignore
+                        const resizeObserver = new ResizeObserver(entries => {
+                            entries.forEach(entry => {
+                                console.log("entry", entry);
+                            });
+                        });
+                        resizeObserver.observe(heightElement);
+                    }
                     heightElement.addEventListener("resize", () => {
+                        console.log("resizing...");
                         navbarElem.style = "min-height:" + heightElement.getBoundingClientRect().height + "px";
                     });
+                    setTimeout(() => {
+                        navbarElem.style = "min-height:" + heightElement.getBoundingClientRect().height + "px";
+                    }, 500);
+                    setTimeout(() => {
+                        navbarElem.style = "min-height:" + heightElement.getBoundingClientRect().height + "px";
+                    }, 1000);
+                    setTimeout(() => {
+                        navbarElem.style = "min-height:" + heightElement.getBoundingClientRect().height + "px";
+                    }, 1500);
                 });
                 imgElem.src = this._backgroundImage;
                 navbarElem.classList.add("with-image");
@@ -8344,7 +8334,7 @@ class SiteManager {
                 yield Promise.all([site._onConstructPromise, site.getViewPromise()]);
                 //If site is ended inside onConstruct, don't do anything
                 if (site._state !== Context_1.Context.STATE_DESTROYED && site._state !== Context_1.Context.STATE_DESTROYING) {
-                    yield site.onViewLoaded();
+                    yield site.callOnViewLoaded();
                     site._viewLoadedPromise.resolve();
                     return this._show(site);
                 }
@@ -8412,7 +8402,7 @@ class SiteManager {
     _resumeSite(site) {
         return __awaiter(this, void 0, void 0, function* () {
             site = Helper_1.Helper.nonNull(site, this.getCurrentSite());
-            if (Helper_1.Helper.isNotNull(site) && (site._state === Context_1.Context.STATE_PAUSED || site._state === Context_1.Context.STATE_CONSTRUCTED)) {
+            if (Helper_1.Helper.isNotNull(site) && (site._state === Context_1.Context.STATE_PAUSED || site._state === Context_1.Context.STATE_VIEW_LOADED)) {
                 yield site.getViewPromise();
                 Helper_1.Helper.removeAllChildren(this._siteDiv).appendChild(site._view);
                 yield Translator_1.Translator.getInstance().updateTranslations();
@@ -9258,6 +9248,11 @@ class Dialog {
         return __awaiter(this, void 0, void 0, function* () {
             yield this._contentPromise;
             this._backgroundElement = this.createModalDialogElement();
+            this._backgroundElement.addEventListener("keyup", e => {
+                if (e.key === "Escape" && this._cancelable) {
+                    this.close();
+                }
+            });
             document.body.appendChild(this._backgroundElement);
             yield Translator_1.Translator.getInstance().updateTranslations();
             this._addedToDomePromiseResolver();
@@ -12261,13 +12256,14 @@ class HotkeyManager {
     }
     _addListeners() {
         window.addEventListener("keydown", e => {
-            this._keys[e.key] = true;
+            this._keys[e.key.toLowerCase()] = true;
             if (this._active) {
                 this._checkCallbacks(e);
             }
         });
         window.addEventListener("keyup", e => {
-            this._keys[e.key] = false;
+            console.log("keyUp", e.key, e);
+            this._keys[e.key.toLowerCase()] = false;
         });
     }
     activate() {
@@ -12282,6 +12278,9 @@ class HotkeyManager {
             keys: keys,
             callback: callback
         };
+    }
+    isKeyPressed(key) {
+        return this._active && this._keys[key] && this._keys[key] === true;
     }
     _checkCallbacks(e) {
         //TODO async forEach?
@@ -12768,6 +12767,27 @@ class Helper {
     static toSnakeCase(camelCase) {
         return camelCase.replace(/([A-Z])/g, function (find, something, position) { return ((position > 0) ? "_" : "") + find[0].toLowerCase(); });
     }
+    static wait(timeout, result) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return new Promise(r => {
+                setTimeout(() => {
+                    r(result);
+                }, timeout);
+            });
+        });
+    }
+    static timeout(time, otherPromise, timeoutResult) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return Promise.race([otherPromise, Helper.wait(time).then(() => {
+                    if (timeoutResult === undefined) {
+                        return Promise.reject();
+                    }
+                    else {
+                        return timeoutResult;
+                    }
+                })]);
+        });
+    }
 }
 exports.Helper = Helper;
 //# sourceMappingURL=Helper.js.map
@@ -12973,6 +12993,9 @@ class MigrationHelper {
             else if (columnConfig["default"] === false) {
                 columnConfig["default"] = 0;
             }
+            if (columnConfig["type"] === MigrationHelper.TYPES.SIMPLE_JSON) {
+                columnConfig["type"] = MigrationHelper.TYPES.TEXT;
+            }
             if (columnConfig["type"] === MigrationHelper.TYPES.MEDIUMTEXT && !this.isServer()) {
                 columnConfig["type"] = MigrationHelper.TYPES.TEXT;
             }
@@ -13027,12 +13050,19 @@ class MigrationHelper {
                 key.columnNames = [key.columnNames[0]];
                 key.referencedColumnNames = [key.referencedColumnNames[0]];
             });
+            if (MigrationHelper.isServer()) {
+                table.columns.forEach(column => {
+                    if (column.default !== null && typeof column.default === "string" && column.default.startsWith("'") && column.default.endsWith("'")) {
+                        column.default = column.default.substring(1, column.default.length - 1);
+                    }
+                });
+            }
             yield queryRunner.createTable(table);
             let names = [];
             table.columns.forEach(column => {
                 names.push(column.name);
             });
-            yield queryRunner.query("INSERT INTO " + table.name + "(" + names.join(",") + ") SELECT " + names.join(",") + " FROM " + tableName + ";");
+            yield queryRunner.query("INSERT INTO " + table.name + "(`" + names.join("`,`") + "`) SELECT `" + names.join("`,`") + "` FROM " + tableName + ";");
             yield queryRunner.query("DROP TABLE " + tableName + ";");
             yield queryRunner.createTable(newTable);
             let newColumnNames = [];
@@ -13043,7 +13073,7 @@ class MigrationHelper {
                     names.push(column.name);
                 }
             });
-            yield queryRunner.query("INSERT INTO " + tableName + "(" + names.join(",") + ") SELECT " + names.join(",") + " FROM " + table.name + ";");
+            yield queryRunner.query("INSERT INTO " + tableName + "(`" + names.join("`,`") + "`) SELECT `" + names.join("`,`") + "` FROM " + table.name + ";");
             yield queryRunner.query("DROP TABLE " + table.name + ";");
         });
     }
@@ -82770,6 +82800,17 @@ module.exports = function(module) {
 
 /***/ }),
 
+/***/ "./src/client/html/Dialog/rejectReasonDialog.html":
+/*!********************************************************!*\
+  !*** ./src/client/html/Dialog/rejectReasonDialog.html ***!
+  \********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__.p + "html/rejectReasonDialog.html";
+
+/***/ }),
+
 /***/ "./src/client/html/Fragment/selectPersonFragment.html":
 /*!************************************************************!*\
   !*** ./src/client/html/Fragment/selectPersonFragment.html ***!
@@ -82836,9 +82877,38 @@ module.exports = __webpack_require__.p + "html/selectPersonSite.html";
 
 /***/ }),
 
-/***/ "./src/client/js/Fragment/SelectPersonFragment.js":
+/***/ "./src/client/js/Dialog/RejectReasonDialog.ts":
+/*!****************************************************!*\
+  !*** ./src/client/js/Dialog/RejectReasonDialog.ts ***!
+  \****************************************************/
+/*! exports provided: RejectReasonDialog */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "RejectReasonDialog", function() { return RejectReasonDialog; });
+/* harmony import */ var cordova_sites__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! cordova-sites */ "./node_modules/cordova-sites/dist/client.js");
+/* harmony import */ var cordova_sites__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(cordova_sites__WEBPACK_IMPORTED_MODULE_0__);
+
+const view = __webpack_require__(/*! ../../html/Dialog/rejectReasonDialog.html */ "./src/client/html/Dialog/rejectReasonDialog.html");
+class RejectReasonDialog extends cordova_sites__WEBPACK_IMPORTED_MODULE_0__["Dialog"] {
+    constructor() {
+        super(cordova_sites__WEBPACK_IMPORTED_MODULE_0__["ViewInflater"].getInstance().load(view).then(view => {
+            view.querySelector(".reject-button").addEventListener("click", () => {
+                this._result = view.querySelector(".reject-reason").value;
+                this.close();
+            });
+            return view;
+        }), "Reject Reason");
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/client/js/Fragment/SelectPersonFragment.ts":
 /*!********************************************************!*\
-  !*** ./src/client/js/Fragment/SelectPersonFragment.js ***!
+  !*** ./src/client/js/Fragment/SelectPersonFragment.ts ***!
   \********************************************************/
 /*! exports provided: SelectPersonFragment */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
@@ -82848,23 +82918,28 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "SelectPersonFragment", function() { return SelectPersonFragment; });
 /* harmony import */ var cordova_sites_dist_client_js_Context_AbstractFragment__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! cordova-sites/dist/client/js/Context/AbstractFragment */ "./node_modules/cordova-sites/dist/client/js/Context/AbstractFragment.js");
 /* harmony import */ var cordova_sites_dist_client_js_Context_AbstractFragment__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(cordova_sites_dist_client_js_Context_AbstractFragment__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _html_Fragment_selectPersonFragment_html__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../html/Fragment/selectPersonFragment.html */ "./src/client/html/Fragment/selectPersonFragment.html");
-/* harmony import */ var _html_Fragment_selectPersonFragment_html__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_html_Fragment_selectPersonFragment_html__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var tabulator_tables__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! tabulator-tables */ "./node_modules/tabulator-tables/dist/js/tabulator.js");
-/* harmony import */ var tabulator_tables__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(tabulator_tables__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var js_helper_dist_shared_DateHelper__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! js-helper/dist/shared/DateHelper */ "./node_modules/js-helper/dist/shared/DateHelper.js");
-/* harmony import */ var js_helper_dist_shared_DateHelper__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(js_helper_dist_shared_DateHelper__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var _shared_model_Person__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../../../shared/model/Person */ "./src/shared/model/Person.ts");
-/* harmony import */ var cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! cordova-sites/dist/client/js/DataManager */ "./node_modules/cordova-sites/dist/client/js/DataManager.js");
-/* harmony import */ var cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_5__);
-/* harmony import */ var cordova_sites_easy_sync_dist_client_SyncJob__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! cordova-sites-easy-sync/dist/client/SyncJob */ "./node_modules/cordova-sites-easy-sync/dist/client/SyncJob.js");
-/* harmony import */ var cordova_sites_easy_sync_dist_client_SyncJob__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(cordova_sites_easy_sync_dist_client_SyncJob__WEBPACK_IMPORTED_MODULE_6__);
-/* harmony import */ var js_helper_dist_shared_Helper__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! js-helper/dist/shared/Helper */ "./node_modules/js-helper/dist/shared/Helper.js");
-/* harmony import */ var js_helper_dist_shared_Helper__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(js_helper_dist_shared_Helper__WEBPACK_IMPORTED_MODULE_7__);
+/* harmony import */ var tabulator_tables__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! tabulator-tables */ "./node_modules/tabulator-tables/dist/js/tabulator.js");
+/* harmony import */ var tabulator_tables__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(tabulator_tables__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var js_helper_dist_shared_DateHelper__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! js-helper/dist/shared/DateHelper */ "./node_modules/js-helper/dist/shared/DateHelper.js");
+/* harmony import */ var js_helper_dist_shared_DateHelper__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(js_helper_dist_shared_DateHelper__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var _shared_model_Person__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../../shared/model/Person */ "./src/shared/model/Person.ts");
+/* harmony import */ var cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! cordova-sites/dist/client/js/DataManager */ "./node_modules/cordova-sites/dist/client/js/DataManager.js");
+/* harmony import */ var cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var cordova_sites_easy_sync_dist_client_SyncJob__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! cordova-sites-easy-sync/dist/client/SyncJob */ "./node_modules/cordova-sites-easy-sync/dist/client/SyncJob.js");
+/* harmony import */ var cordova_sites_easy_sync_dist_client_SyncJob__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(cordova_sites_easy_sync_dist_client_SyncJob__WEBPACK_IMPORTED_MODULE_5__);
+/* harmony import */ var js_helper_dist_shared_Helper__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! js-helper/dist/shared/Helper */ "./node_modules/js-helper/dist/shared/Helper.js");
+/* harmony import */ var js_helper_dist_shared_Helper__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(js_helper_dist_shared_Helper__WEBPACK_IMPORTED_MODULE_6__);
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 
-
-
-
+const view = __webpack_require__(/*! ../../html/Fragment/selectPersonFragment.html */ "./src/client/html/Fragment/selectPersonFragment.html");
 
 
 
@@ -82872,31 +82947,31 @@ __webpack_require__.r(__webpack_exports__);
 
 
 class SelectPersonFragment extends cordova_sites_dist_client_js_Context_AbstractFragment__WEBPACK_IMPORTED_MODULE_0__["AbstractFragment"] {
-    constructor(site) {
-        super(site, _html_Fragment_selectPersonFragment_html__WEBPACK_IMPORTED_MODULE_1___default.a);
+    constructor(site, lists) {
+        super(site, view);
         this._table = null;
         this._onRowClickedListener = null;
         this._rowContextActions = [];
+        this.lists = lists;
     }
-
-    setMemberFilter(filter, list){
+    setMemberFilter(filter, list) {
         this._memberFilter = filter;
         this._list = list;
     }
-
-    addRowContextAction(action){
+    addRowContextAction(action) {
         this._rowContextActions.push(action);
     }
-
     onViewLoaded() {
-        let res = super.onViewLoaded();
-
-        this._personTableElem = this.findBy(".person-table");
-
-        this._table = new tabulator_tables__WEBPACK_IMPORTED_MODULE_2__(this._personTableElem, {
-            height: "100%", // set height of table (in CSS or here), this enables the Virtual DOM and improves render speed dramatically (can be any valid css height value)
-            selectable: true,
-            columns: [ //Define Table Columns
+        const _super = Object.create(null, {
+            onViewLoaded: { get: () => super.onViewLoaded }
+        });
+        return __awaiter(this, void 0, void 0, function* () {
+            let res = _super.onViewLoaded.call(this);
+            if (js_helper_dist_shared_Helper__WEBPACK_IMPORTED_MODULE_6__["Helper"].isNull(this.lists)) {
+                this.lists = yield cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_4__["DataManager"].load("lists");
+            }
+            this._personTableElem = this.findBy(".person-table");
+            const columns = [
                 {
                     title: "Vorname",
                     field: "firstname",
@@ -82904,14 +82979,14 @@ class SelectPersonFragment extends cordova_sites_dist_client_js_Context_Abstract
                     frozen: true,
                     headerFilterPlaceholder: "..."
                 },
-                {title: "Nachname", field: "surname", headerFilter: true, frozen: true, headerFilterPlaceholder: "..."},
-                {title: "E-Mail", field: "email", headerFilter: true, headerFilterPlaceholder: "..."},
-                {title: "Straße", field: "street", headerFilter: true, headerFilterPlaceholder: "..."},
-                {title: "Hausnr.", field: "housenumber", headerFilter: true, headerFilterPlaceholder: "..."},
-                {title: "Adr.-Zusatz", field: "addressSuffix", headerFilter: true, headerFilterPlaceholder: "..."},
-                {title: "PLZ", field: "zipcode", headerFilter: true, headerFilterPlaceholder: "..."},
-                {title: "Stadt", field: "city", headerFilter: true, headerFilterPlaceholder: "..."},
-                {title: "Land", field: "countrycode", headerFilter: true, headerFilterPlaceholder: "..."},
+                { title: "Nachname", field: "surname", headerFilter: true, frozen: true, headerFilterPlaceholder: "..." },
+                { title: "E-Mail", field: "email", headerFilter: true, headerFilterPlaceholder: "..." },
+                { title: "Straße", field: "street", headerFilter: true, headerFilterPlaceholder: "..." },
+                { title: "Hausnr.", field: "housenumber", headerFilter: true, headerFilterPlaceholder: "..." },
+                { title: "Adr.-Zusatz", field: "addressSuffix", headerFilter: true, headerFilterPlaceholder: "..." },
+                { title: "PLZ", field: "zipcode", headerFilter: true, headerFilterPlaceholder: "..." },
+                { title: "Stadt", field: "city", headerFilter: true, headerFilterPlaceholder: "..." },
+                { title: "Land", field: "countrycode", headerFilter: true, headerFilterPlaceholder: "..." },
                 {
                     title: "Geburtstag",
                     field: "birthday",
@@ -82919,117 +82994,141 @@ class SelectPersonFragment extends cordova_sites_dist_client_js_Context_Abstract
                     headerFilterPlaceholder: "...",
                     formatter: (cell) => {
                         if (cell.getValue()) {
-                            return js_helper_dist_shared_DateHelper__WEBPACK_IMPORTED_MODULE_3__["DateHelper"].strftime("%d.%m.%Y", cell.getValue())
-                        } else {
+                            return js_helper_dist_shared_DateHelper__WEBPACK_IMPORTED_MODULE_2__["DateHelper"].strftime("%d.%m.%Y", cell.getValue());
+                        }
+                        else {
                             return "-";
                         }
                     }
                 },
-                {title: "Kommentar", field: "comment", headerFilter: true, headerFilterPlaceholder: "..."},
-                // {title: "Age", field: "age", hozAlign: "left", formatter: "progress"},
-                // {title: "Favourite Color", field: "col"},
-                // {title: "Date Of Birth", field: "dob", sorter: "date", hozAlign: "center"},
-            ],
-            ajaxParams: {
-                "queries": JSON.stringify([{
-                    model: _shared_model_Person__WEBPACK_IMPORTED_MODULE_4__["Person"].getSchemaName(),
-                }]),
-
-            },
-            ajaxURL: cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_5__["DataManager"].basePath(cordova_sites_easy_sync_dist_client_SyncJob__WEBPACK_IMPORTED_MODULE_6__["SyncJob"].SYNC_PATH_PREFIX),
-            ajaxProgressiveLoad: "scroll",
-            ajaxProgressiveLoadScrollMargin: 350,
-            ajaxSorting: true,
-            ajaxFiltering: true,
-            ajaxRequestFunc: async (url, config, params) => {
-                let orderBy = {
-                    "firstname": "ASC",
-                    "surname": "ASC",
-                    "email": "ASC"
-                }
-
-                if (params.sorters && params.sorters.length > 0) {
-                    orderBy = {};
-                    params.sorters.forEach(s => orderBy[s.field] = s.dir.toUpperCase());
-                }
-
-                let filter = {};
-                if (params.filters && params.filters.length > 0) {
-                    params.filters.forEach(f => {
-                        if (f.type === "like") {
-                            filter[f.field] = {
-                                type: "like",
-                                value: "%" + f.value + "%"
+                { title: "Kommentar", field: "comment", headerFilter: true, headerFilterPlaceholder: "..." },
+            ];
+            if (this.lists && Array.isArray(this.lists.entries)) {
+                // @ts-ignore
+                this.lists.entries.forEach(entry => {
+                    const field = "list-" + entry.list_id;
+                    const column = {
+                        title: entry.list_name,
+                        field: field,
+                        headerFilter: "tickCross",
+                        headerSort: false,
+                        headerFilterParams: {
+                            tristate: true
+                        },
+                        formatter: (cell) => {
+                            const val = cell.getRow().getData()[field];
+                            if (val === true) {
+                                return "<input type = 'checkbox' disabled checked>";
                             }
-                        }
-                    })
-                }
-
-                let query = {
-                    model: _shared_model_Person__WEBPACK_IMPORTED_MODULE_4__["Person"].getSchemaName(),
-                    where: filter,
-                    orderBy: orderBy
-                };
-                if (js_helper_dist_shared_Helper__WEBPACK_IMPORTED_MODULE_7__["Helper"].isNotNull(this._memberFilter)){
-                    query.member = this._memberFilter;
-                    query.list = this._list;
-                }
-
-                console.log("query", query);
-
-                let modelJson = await cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_5__["DataManager"].load("/persons" +
-                    cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_5__["DataManager"].buildQuery({
-                        "queries": JSON.stringify([query]),
-                        "offset": (params.page - 1) * 50
-                    })
-                );
-                return {last_page: (modelJson.nextOffset / 50) + 1, data: modelJson.results[0].entities};
-            },
-            rowDblClick: async (e, row) => { //trigger an alert message when the row is clicked
-                if (typeof this._onRowClickedListener === "function") {
-                    await this._onRowClickedListener(e, row, this._table);
-                }
-            },
-            // rowContext: async (e, row) => {
-            //     if (typeof this._onRowContextMenuListener === "function"){
-            //         await this._onRowContextMenuListener(e, row);
-            //     }
-            // }
-            rowContextMenu: this._rowContextActions,
-        })
-
-        window.addEventListener("resize", () => {
-            this._updateTableHeight();
-        })
-
-        return res;
+                            else if (val === false) {
+                                return "<input type = 'checkbox' disabled>";
+                            }
+                            return "";
+                        },
+                    };
+                    columns.push(column);
+                });
+            }
+            console.log("columns", columns);
+            this._table = new tabulator_tables__WEBPACK_IMPORTED_MODULE_1__(this._personTableElem, {
+                height: "100%",
+                selectable: true,
+                columns: columns,
+                ajaxParams: {
+                    "queries": JSON.stringify([{
+                            model: _shared_model_Person__WEBPACK_IMPORTED_MODULE_3__["Person"].getSchemaName(),
+                        }]),
+                },
+                ajaxURL: cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_4__["DataManager"].basePath(cordova_sites_easy_sync_dist_client_SyncJob__WEBPACK_IMPORTED_MODULE_5__["SyncJob"].SYNC_PATH_PREFIX),
+                ajaxProgressiveLoad: "scroll",
+                ajaxProgressiveLoadScrollMargin: 350,
+                ajaxSorting: true,
+                ajaxFiltering: true,
+                ajaxRequestFunc: (url, config, params) => __awaiter(this, void 0, void 0, function* () {
+                    // this.getSite().showLoadingSymbol();
+                    let orderBy = {
+                        "firstname": "ASC",
+                        "surname": "ASC",
+                        "email": "ASC"
+                    };
+                    if (params.sorters && params.sorters.length > 0) {
+                        orderBy = {};
+                        params.sorters.forEach(s => orderBy[s.field] = s.dir.toUpperCase());
+                    }
+                    let memberships = {};
+                    let filter = {};
+                    if (params.filters && params.filters.length > 0) {
+                        params.filters.forEach((f, i) => {
+                            if (f.field.startsWith("list-")) {
+                                memberships[f.field.substring(5)] = f.value;
+                            }
+                            else if (f.type === "like") {
+                                filter[f.field] = {
+                                    type: "like",
+                                    value: "%" + f.value + "%"
+                                };
+                            }
+                        });
+                    }
+                    let query = {
+                        model: _shared_model_Person__WEBPACK_IMPORTED_MODULE_3__["Person"].getSchemaName(),
+                        where: filter,
+                        memberships: memberships,
+                        orderBy: orderBy
+                    };
+                    if (js_helper_dist_shared_Helper__WEBPACK_IMPORTED_MODULE_6__["Helper"].isNotNull(this._memberFilter)) {
+                        query.member = this._memberFilter;
+                        query.list = this._list;
+                    }
+                    let modelJson = yield cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_4__["DataManager"].load("/persons" +
+                        cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_4__["DataManager"].buildQuery({
+                            "queries": JSON.stringify([query]),
+                            "offset": (params.page - 1) * 50
+                        }));
+                    console.log(modelJson.results[0].entities);
+                    return { last_page: Math.floor(modelJson.nextOffset / 50) + 1, data: modelJson.results[0].entities };
+                }),
+                rowDblClick: (e, row) => __awaiter(this, void 0, void 0, function* () {
+                    if (typeof this._onRowClickedListener === "function") {
+                        yield this._onRowClickedListener(e, row, this._table);
+                    }
+                }),
+                // rowContext: async (e, row) => {
+                //     if (typeof this._onRowContextMenuListener === "function"){
+                //         await this._onRowContextMenuListener(e, row);
+                //     }
+                // }
+                rowContextMenu: this._rowContextActions,
+            });
+            window.addEventListener("resize", () => {
+                this._updateTableHeight();
+            });
+            return res;
+        });
     }
-
-    addData(data){
+    addData(data) {
         this._table.updateOrAddData(data);
     }
-
     setOnRowClickedListener(listener) {
         this._onRowClickedListener = listener;
     }
-
     onStart(pauseArguments) {
         let res = super.onStart(pauseArguments);
         this._updateTableHeight();
         return res;
     }
-
     _updateTableHeight() {
         // let height = parseInt(window.getComputedStyle(this._personTableElem.parentElement).getPropertyValue("height"));
         // this._personTableElem.style.height = (height-1)+"px";
     }
 }
 
+
 /***/ }),
 
-/***/ "./src/client/js/Site/CheckMailSite.js":
+/***/ "./src/client/js/Site/CheckMailSite.ts":
 /*!*********************************************!*\
-  !*** ./src/client/js/Site/CheckMailSite.js ***!
+  !*** ./src/client/js/Site/CheckMailSite.ts ***!
   \*********************************************/
 /*! exports provided: CheckMailSite */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
@@ -83039,22 +83138,32 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "CheckMailSite", function() { return CheckMailSite; });
 /* harmony import */ var cordova_sites_dist_client_js_Context_MenuSite__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! cordova-sites/dist/client/js/Context/MenuSite */ "./node_modules/cordova-sites/dist/client/js/Context/MenuSite.js");
 /* harmony import */ var cordova_sites_dist_client_js_Context_MenuSite__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(cordova_sites_dist_client_js_Context_MenuSite__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _html_Site_checkMailSite_html__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../html/Site/checkMailSite.html */ "./src/client/html/Site/checkMailSite.html");
-/* harmony import */ var _html_Site_checkMailSite_html__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_html_Site_checkMailSite_html__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var cordova_sites_dist_client_js_App__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! cordova-sites/dist/client/js/App */ "./node_modules/cordova-sites/dist/client/js/App.js");
-/* harmony import */ var cordova_sites_dist_client_js_App__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(cordova_sites_dist_client_js_App__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! cordova-sites/dist/client/js/DataManager */ "./node_modules/cordova-sites/dist/client/js/DataManager.js");
-/* harmony import */ var cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var cordova_sites_dist_client_js_Form__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! cordova-sites/dist/client/js/Form */ "./node_modules/cordova-sites/dist/client/js/Form.js");
-/* harmony import */ var cordova_sites_dist_client_js_Form__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(cordova_sites_dist_client_js_Form__WEBPACK_IMPORTED_MODULE_4__);
-/* harmony import */ var js_helper_dist_shared_JsonHelper__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! js-helper/dist/shared/JsonHelper */ "./node_modules/js-helper/dist/shared/JsonHelper.js");
-/* harmony import */ var js_helper_dist_shared_JsonHelper__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(js_helper_dist_shared_JsonHelper__WEBPACK_IMPORTED_MODULE_5__);
-/* harmony import */ var cordova_sites_dist_client_js_Toast_Toast__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! cordova-sites/dist/client/js/Toast/Toast */ "./node_modules/cordova-sites/dist/client/js/Toast/Toast.js");
-/* harmony import */ var cordova_sites_dist_client_js_Toast_Toast__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(cordova_sites_dist_client_js_Toast_Toast__WEBPACK_IMPORTED_MODULE_6__);
-/* harmony import */ var js_helper_dist_client_ViewHelper__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! js-helper/dist/client/ViewHelper */ "./node_modules/js-helper/dist/client/ViewHelper.js");
-/* harmony import */ var js_helper_dist_client_ViewHelper__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(js_helper_dist_client_ViewHelper__WEBPACK_IMPORTED_MODULE_7__);
+/* harmony import */ var cordova_sites_dist_client_js_App__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! cordova-sites/dist/client/js/App */ "./node_modules/cordova-sites/dist/client/js/App.js");
+/* harmony import */ var cordova_sites_dist_client_js_App__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(cordova_sites_dist_client_js_App__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! cordova-sites/dist/client/js/DataManager */ "./node_modules/cordova-sites/dist/client/js/DataManager.js");
+/* harmony import */ var cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var cordova_sites_dist_client_js_Form__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! cordova-sites/dist/client/js/Form */ "./node_modules/cordova-sites/dist/client/js/Form.js");
+/* harmony import */ var cordova_sites_dist_client_js_Form__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(cordova_sites_dist_client_js_Form__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var js_helper_dist_shared_JsonHelper__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! js-helper/dist/shared/JsonHelper */ "./node_modules/js-helper/dist/shared/JsonHelper.js");
+/* harmony import */ var js_helper_dist_shared_JsonHelper__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(js_helper_dist_shared_JsonHelper__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var cordova_sites_dist_client_js_Toast_Toast__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! cordova-sites/dist/client/js/Toast/Toast */ "./node_modules/cordova-sites/dist/client/js/Toast/Toast.js");
+/* harmony import */ var cordova_sites_dist_client_js_Toast_Toast__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(cordova_sites_dist_client_js_Toast_Toast__WEBPACK_IMPORTED_MODULE_5__);
+/* harmony import */ var js_helper_dist_client_ViewHelper__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! js-helper/dist/client/ViewHelper */ "./node_modules/js-helper/dist/client/ViewHelper.js");
+/* harmony import */ var js_helper_dist_client_ViewHelper__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(js_helper_dist_client_ViewHelper__WEBPACK_IMPORTED_MODULE_6__);
+/* harmony import */ var cordova_sites__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! cordova-sites */ "./node_modules/cordova-sites/dist/client.js");
+/* harmony import */ var cordova_sites__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(cordova_sites__WEBPACK_IMPORTED_MODULE_7__);
+/* harmony import */ var _Dialog_RejectReasonDialog__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../Dialog/RejectReasonDialog */ "./src/client/js/Dialog/RejectReasonDialog.ts");
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 
-
+const view = __webpack_require__(/*! ../../html/Site/checkMailSite.html */ "./src/client/html/Site/checkMailSite.html");
 
 
 
@@ -83065,84 +83174,91 @@ __webpack_require__.r(__webpack_exports__);
 
 class CheckMailSite extends cordova_sites_dist_client_js_Context_MenuSite__WEBPACK_IMPORTED_MODULE_0__["MenuSite"] {
     constructor(siteManager) {
-        super(siteManager, _html_Site_checkMailSite_html__WEBPACK_IMPORTED_MODULE_1___default.a);
+        super(siteManager, view);
     }
-
-    async onConstruct(constructParameters) {
-        let res = super.onConstruct(constructParameters);
-        this._list = constructParameters["list"];
-        return res;
+    onConstruct(constructParameters) {
+        const _super = Object.create(null, {
+            onConstruct: { get: () => super.onConstruct }
+        });
+        return __awaiter(this, void 0, void 0, function* () {
+            let res = _super.onConstruct.call(this, constructParameters);
+            this._list = constructParameters["list"];
+            return res;
+        });
     }
-
     onCreateMenu(navbar) {
         navbar.removeAllActions();
         super.onCreateMenu(navbar);
     }
-
     onViewLoaded() {
         let res = super.onViewLoaded();
-
-        this._emailContainer = this.findBy("#email-container")
+        this._emailContainer = this.findBy("#email-container");
         this._emailTemplate = this.findBy("#email-template");
         this._emailTemplate.removeAttribute("id");
         this._emailTemplate.remove();
-
         this._passwordSection = this.findBy("#password-section");
         this._emailSection = this.findBy("#email-section");
-
-        new cordova_sites_dist_client_js_Form__WEBPACK_IMPORTED_MODULE_4__["Form"](this.findBy("#password-form"), async values => {
+        new cordova_sites_dist_client_js_Form__WEBPACK_IMPORTED_MODULE_3__["Form"](this.findBy("#password-form"), (values) => __awaiter(this, void 0, void 0, function* () {
             this._pw = values["password"];
-            let mails = await cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_3__["DataManager"].send("mails", {list: this._list, pw: this._pw});
-            if (!js_helper_dist_shared_JsonHelper__WEBPACK_IMPORTED_MODULE_5__["JsonHelper"].deepEqual(mails, {})) {
+            let mails = yield cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_2__["DataManager"].send("mails", { list: this._list, pw: this._pw });
+            if (!js_helper_dist_shared_JsonHelper__WEBPACK_IMPORTED_MODULE_4__["JsonHelper"].deepEqual(mails, {})) {
                 this.setEmails(mails);
-            } else {
-                await new cordova_sites_dist_client_js_Toast_Toast__WEBPACK_IMPORTED_MODULE_6__["Toast"]("wrong password!").show();
             }
-        });
-
+            else {
+                yield new cordova_sites_dist_client_js_Toast_Toast__WEBPACK_IMPORTED_MODULE_5__["Toast"]("wrong password!").show();
+            }
+        }));
         return res;
     }
-
     setEmails(mails) {
         this._passwordSection.classList.add("hidden");
         this._emailSection.classList.remove("hidden");
-
-        js_helper_dist_client_ViewHelper__WEBPACK_IMPORTED_MODULE_7__["ViewHelper"].removeAllChildren(this._emailContainer);
+        js_helper_dist_client_ViewHelper__WEBPACK_IMPORTED_MODULE_6__["ViewHelper"].removeAllChildren(this._emailContainer);
         if (mails.entries) {
             mails.entries.forEach(mail => {
-                let mailElem = this._emailTemplate.cloneNode(true);
+                const mailElem = this._emailTemplate.cloneNode(true);
                 mailElem.querySelector(".email-text").innerText = CheckMailSite._prepareMailText(mail.msg);
                 mailElem.querySelectorAll(".button").forEach(button => {
-                    button.addEventListener("click", async (e) => {
+                    button.addEventListener("click", (e) => __awaiter(this, void 0, void 0, function* () {
                         this.showLoadingSymbol();
-                        let res = await cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_3__["DataManager"].send("handleMail", {
+                        const action = e.target.dataset["action"];
+                        let reason = "";
+                        if (action === "reject") {
+                            reason = yield new _Dialog_RejectReasonDialog__WEBPACK_IMPORTED_MODULE_8__["RejectReasonDialog"]().show();
+                            console.log("reason", reason);
+                        }
+                        if (reason === null) {
+                            this.removeLoadingSymbol();
+                            return;
+                        }
+                        let res = yield cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_2__["DataManager"].send("handleMail", {
                             list: this._list,
                             pw: this._pw,
                             request: mail.request_id,
-                            action: e.target.dataset["action"]
-                        })
+                            action: action,
+                            reason: reason,
+                        });
                         this.removeLoadingSymbol();
                         if (res && res.success && res.success === true) {
                             mailElem.remove();
-                        } else {
-                            new cordova_sites_dist_client_js_Toast_Toast__WEBPACK_IMPORTED_MODULE_6__["Toast"]("there was an error: " + JSON.stringify(res)).show();
                         }
-                    })
-                })
+                        else {
+                            new cordova_sites_dist_client_js_Toast_Toast__WEBPACK_IMPORTED_MODULE_5__["Toast"]("there was an error: " + JSON.stringify(res)).show();
+                        }
+                    }));
+                });
                 this._emailContainer.appendChild(mailElem);
-            })
+            });
+            cordova_sites__WEBPACK_IMPORTED_MODULE_7__["Translator"].getInstance().updateTranslations(this._emailContainer);
         }
     }
-
     static _prepareMailText(msg) {
         let headerLength = msg.indexOf("\n\n");
         let headers = msg.substring(0, headerLength).split("\n");
         let body = msg.substring(headerLength + 2);
-
         const allowedHeaders = [
             "to", "from", "date", "subject"
-        ]
-
+        ];
         headers = headers.filter(h => {
             let headerName = h.split(":")[0].toLowerCase();
             return allowedHeaders.indexOf(headerName) !== -1;
@@ -83150,16 +83266,16 @@ class CheckMailSite extends cordova_sites_dist_client_js_Context_MenuSite__WEBPA
         return headers.join("\n") + "\n\n" + body;
     }
 }
-
-cordova_sites_dist_client_js_App__WEBPACK_IMPORTED_MODULE_2__["App"].addInitialization(app => {
+cordova_sites_dist_client_js_App__WEBPACK_IMPORTED_MODULE_1__["App"].addInitialization(app => {
     app.addDeepLink("checkMail", CheckMailSite);
-})
+});
+
 
 /***/ }),
 
-/***/ "./src/client/js/Site/EditListSite.js":
+/***/ "./src/client/js/Site/EditListSite.ts":
 /*!********************************************!*\
-  !*** ./src/client/js/Site/EditListSite.js ***!
+  !*** ./src/client/js/Site/EditListSite.ts ***!
   \********************************************/
 /*! exports provided: EditListSite */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
@@ -83167,22 +83283,31 @@ cordova_sites_dist_client_js_App__WEBPACK_IMPORTED_MODULE_2__["App"].addInitiali
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "EditListSite", function() { return EditListSite; });
-/* harmony import */ var _html_Site_editListsSite_html__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../html/Site/editListsSite.html */ "./src/client/html/Site/editListsSite.html");
-/* harmony import */ var _html_Site_editListsSite_html__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_html_Site_editListsSite_html__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var js_helper__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! js-helper */ "./node_modules/js-helper/dist/shared.js");
+/* harmony import */ var js_helper__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(js_helper__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! cordova-sites/dist/client/js/DataManager */ "./node_modules/cordova-sites/dist/client/js/DataManager.js");
 /* harmony import */ var cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var cordova_sites_dist_client_js_Context_MenuSite__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! cordova-sites/dist/client/js/Context/MenuSite */ "./node_modules/cordova-sites/dist/client/js/Context/MenuSite.js");
 /* harmony import */ var cordova_sites_dist_client_js_Context_MenuSite__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(cordova_sites_dist_client_js_Context_MenuSite__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var cordova_sites__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! cordova-sites */ "./node_modules/cordova-sites/dist/client.js");
 /* harmony import */ var cordova_sites__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(cordova_sites__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var _Fragment_SelectPersonFragment__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../Fragment/SelectPersonFragment */ "./src/client/js/Fragment/SelectPersonFragment.js");
+/* harmony import */ var _Fragment_SelectPersonFragment__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../Fragment/SelectPersonFragment */ "./src/client/js/Fragment/SelectPersonFragment.ts");
 /* harmony import */ var js_helper_dist_shared_JsonHelper__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! js-helper/dist/shared/JsonHelper */ "./node_modules/js-helper/dist/shared/JsonHelper.js");
 /* harmony import */ var js_helper_dist_shared_JsonHelper__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(js_helper_dist_shared_JsonHelper__WEBPACK_IMPORTED_MODULE_5__);
 /* harmony import */ var _shared_RIGHTS__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../../../shared/RIGHTS */ "./src/shared/RIGHTS.ts");
 /* harmony import */ var cordova_sites_user_management_dist_client_js_Context_UserSite__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! cordova-sites-user-management/dist/client/js/Context/UserSite */ "./node_modules/cordova-sites-user-management/dist/client/js/Context/UserSite.js");
 /* harmony import */ var cordova_sites_user_management_dist_client_js_Context_UserSite__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(cordova_sites_user_management_dist_client_js_Context_UserSite__WEBPACK_IMPORTED_MODULE_7__);
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 
-
+const view = __webpack_require__(/*! ../../html/Site/editListsSite.html */ "./src/client/html/Site/editListsSite.html");
 
 
 
@@ -83192,140 +83317,167 @@ __webpack_require__.r(__webpack_exports__);
 
 class EditListSite extends cordova_sites_dist_client_js_Context_MenuSite__WEBPACK_IMPORTED_MODULE_2__["MenuSite"] {
     constructor(siteManager) {
-        super(siteManager, _html_Site_editListsSite_html__WEBPACK_IMPORTED_MODULE_0___default.a);
-        this._ownerFragment = new _Fragment_SelectPersonFragment__WEBPACK_IMPORTED_MODULE_4__["SelectPersonFragment"](this);
-        this._memberFragment = new _Fragment_SelectPersonFragment__WEBPACK_IMPORTED_MODULE_4__["SelectPersonFragment"](this);
-        this._personFragment = new _Fragment_SelectPersonFragment__WEBPACK_IMPORTED_MODULE_4__["SelectPersonFragment"](this);
-
-        this.addFragment("#owner-section", this._ownerFragment);
-        this.addFragment("#member-section", this._memberFragment);
-        this.addFragment("#persons-section", this._personFragment);
-
+        super(siteManager, view);
+        this.ownerFragment = new _Fragment_SelectPersonFragment__WEBPACK_IMPORTED_MODULE_4__["SelectPersonFragment"](this);
+        this.memberFragment = new _Fragment_SelectPersonFragment__WEBPACK_IMPORTED_MODULE_4__["SelectPersonFragment"](this);
+        this.personFragment = new _Fragment_SelectPersonFragment__WEBPACK_IMPORTED_MODULE_4__["SelectPersonFragment"](this);
+        this.addFragment("#owner-section", this.ownerFragment);
+        this.addFragment("#member-section", this.memberFragment);
+        this.addFragment("#persons-section", this.personFragment);
         this.addDelegate(new cordova_sites_user_management_dist_client_js_Context_UserSite__WEBPACK_IMPORTED_MODULE_7__["UserSite"](this, _shared_RIGHTS__WEBPACK_IMPORTED_MODULE_6__["RIGHTS"].EDIT_LIST, false));
     }
-
-    async onConstruct(constructParameters) {
-        let res = super.onConstruct(constructParameters);
-
-        if (constructParameters["id"]) {
-            let lists = await cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_1__["DataManager"].load("lists" + cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_1__["DataManager"].buildQuery({listname: constructParameters["id"]}));
-            if (lists) {
-                this._list = lists;
-            }
-        }
-        if (!this._list) {
-            this._list = {};
-        }
-
-        this._ownerFragment.setMemberFilter("moderator", this._list.list_id);
-        this._memberFragment.setMemberFilter("member", this._list.list_id);
-        this._personFragment.setMemberFilter(false, this._list.list_id);
-
-        let ownerAction = {
-            "label": "Add Moderator",
-            "action": async (e, row) => {
-                await this.addMember(row, "moderator")
-            }
-        }
-        let memberAction = {
-            "label": "Add Member",
-            "action": async (e, row) => {
-                await this.addMember(row, "member")
-            }
-        }
-        let leaveOwnerAction = {
-            "label": "Delete Moderator",
-            "action": async (e, row) => {
-                await this.leaveList(row, "moderator")
-            }
-        }
-        let leaveMemberAction = {
-            "label": "Delete Member",
-            "action": async (e, row) => {
-                await this.leaveList(row, "member")
-            }
-        }
-
-        this._personFragment.addRowContextAction(memberAction)
-        this._personFragment.addRowContextAction(ownerAction)
-
-        this._memberFragment.addRowContextAction(ownerAction);
-        this._memberFragment.addRowContextAction(leaveMemberAction);
-
-        this._ownerFragment.addRowContextAction(leaveOwnerAction);
-
-        return res;
-    }
-
-    async addMember(row, role) {
-        this.showLoadingSymbol();
-        let res = await cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_1__["DataManager"].send("/addMember", {
-            "role": role,
-            "list_id": this._list.list_id,
-            "subscriber": row.getData().mailmanId,
-            "subscriberMail": row.getData().email,
+    onConstruct(constructParameters) {
+        const _super = Object.create(null, {
+            onConstruct: { get: () => super.onConstruct }
         });
-        if (res.member_id) {
-            let data = row.getData();
-            if (role === "member") {
-                row.delete();
+        return __awaiter(this, void 0, void 0, function* () {
+            let res = _super.onConstruct.call(this, constructParameters);
+            if (constructParameters["id"]) {
+                let lists = yield cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_1__["DataManager"].load("lists" + cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_1__["DataManager"].buildQuery({ listname: constructParameters["id"] }));
+                if (lists) {
+                    this.list = lists;
+                }
             }
-            if (role === "member") {
-                this._memberFragment.addData([data]);
-            } else {
-                this._ownerFragment.addData([data]);
+            if (!this.list) {
+                this.list = {};
             }
-        }
-        this.removeLoadingSymbol();
-    }
-
-    async leaveList(row, role) {
-        this.showLoadingSymbol();
-        let res = await cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_1__["DataManager"].send("/leaveList", {
-            "role": role,
-            "list_id": this._list.list_id,
-            "subscriberMail": row.getData().email
-        })
-        if (js_helper_dist_shared_JsonHelper__WEBPACK_IMPORTED_MODULE_5__["JsonHelper"].deepEqual({}, res)) {
-            let data = row.getData();
-            row.delete();
-            if (role === "member") {
-                this._personFragment.addData([data]);
-            }
-        }
-        this.removeLoadingSymbol();
-    }
-
-    async onViewLoaded() {
-        let res = super.onViewLoaded();
-
-        let form = new cordova_sites__WEBPACK_IMPORTED_MODULE_3__["Form"](this.findBy("#list-form"), async values => {
-            this._list["description"] = values["description"];
-            this._list["display_name"] = values["display_name"];
-            this._list["subject_prefix"] = values["subject_prefix"];
-            if (values["pw"]) {
-                this._list["pw"] = values["pw"];
-            }
-            this._list["default_member_action"] = values["default_member_action"];
-            this._list["default_nonmember_action"] = values["default_nonmember_action"];
-
-            let res = await cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_1__["DataManager"].send("list", this._list);
-            if (res.title && res.title.startsWith("400") && res.description) {
-                new cordova_sites__WEBPACK_IMPORTED_MODULE_3__["Toast"](res.description, cordova_sites__WEBPACK_IMPORTED_MODULE_3__["Toast"].DEFAULT_DURATION, false).show();
-            } else {
-                await this.finish(res);
-            }
+            this.ownerFragment.setMemberFilter("moderator", this.list.list_id);
+            this.memberFragment.setMemberFilter("member", this.list.list_id);
+            this.personFragment.setMemberFilter(false, this.list.list_id);
+            const ownerAction = {
+                "label": "Add Moderator",
+                "action": (e, row) => __awaiter(this, void 0, void 0, function* () {
+                    yield this.addMember(row, "moderator");
+                })
+            };
+            const memberAction = {
+                "label": "Add Member",
+                "action": (e, row) => __awaiter(this, void 0, void 0, function* () {
+                    yield this.addMember(row, "member");
+                })
+            };
+            const leaveOwnerAction = {
+                "label": "Delete Moderator",
+                "action": (e, row) => __awaiter(this, void 0, void 0, function* () {
+                    yield this.leaveList(row, "moderator");
+                })
+            };
+            const leaveMemberAction = {
+                "label": "Delete Member",
+                "action": (e, row) => __awaiter(this, void 0, void 0, function* () {
+                    yield this.leaveList(row, "member");
+                })
+            };
+            this.personFragment.addRowContextAction(memberAction);
+            this.personFragment.addRowContextAction(ownerAction);
+            this.memberFragment.addRowContextAction(ownerAction);
+            this.memberFragment.addRowContextAction(leaveMemberAction);
+            this.ownerFragment.addRowContextAction(leaveOwnerAction);
+            return res;
         });
-        // console.log("list", this._list);
-        await form.setValues(this._list);
-
-        return res;
+    }
+    addMember(row, role) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.showLoadingSymbol();
+            let rows = row.getTable().getSelectedRows();
+            if (rows.length === 0) {
+                rows = [row];
+            }
+            yield js_helper__WEBPACK_IMPORTED_MODULE_0__["Helper"].asyncForEach(rows, (row) => __awaiter(this, void 0, void 0, function* () {
+                let res = yield cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_1__["DataManager"].send("/addMember", {
+                    "role": role,
+                    "list_id": this.list.list_id,
+                    "subscriber": row.getData().mailmanId,
+                    "subscriberMail": row.getData().email,
+                });
+                if (res.member_id) {
+                    let data = row.getData();
+                    if (role === "member") {
+                        row.delete();
+                    }
+                    if (role === "member") {
+                        this.memberFragment.addData([data]);
+                    }
+                    else {
+                        this.ownerFragment.addData([data]);
+                    }
+                }
+            }), true);
+            this.removeLoadingSymbol();
+        });
+    }
+    leaveList(row, role) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.showLoadingSymbol();
+            let rows = row.getTable().getSelectedRows();
+            if (rows.length === 0) {
+                rows = [row];
+            }
+            yield js_helper__WEBPACK_IMPORTED_MODULE_0__["Helper"].asyncForEach(rows, (row) => __awaiter(this, void 0, void 0, function* () {
+                let res = yield cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_1__["DataManager"].send("/leaveList", {
+                    "role": role,
+                    "list_id": this.list.list_id,
+                    "subscriberMail": row.getData().email
+                });
+                if (js_helper_dist_shared_JsonHelper__WEBPACK_IMPORTED_MODULE_5__["JsonHelper"].deepEqual({}, res)) {
+                    let data = row.getData();
+                    row.delete();
+                    if (role === "member") {
+                        this.personFragment.addData([data]);
+                    }
+                }
+            }));
+            this.removeLoadingSymbol();
+        });
+    }
+    onViewLoaded() {
+        const _super = Object.create(null, {
+            onViewLoaded: { get: () => super.onViewLoaded }
+        });
+        return __awaiter(this, void 0, void 0, function* () {
+            let res = _super.onViewLoaded.call(this);
+            let form = new cordova_sites__WEBPACK_IMPORTED_MODULE_3__["Form"](this.findBy("#list-form"), (values) => __awaiter(this, void 0, void 0, function* () {
+                this.list["description"] = values["description"];
+                this.list["display_name"] = values["display_name"];
+                this.list["subject_prefix"] = values["subject_prefix"];
+                if (values["pw"]) {
+                    this.list["pw"] = values["pw"];
+                }
+                this.list["default_member_action"] = values["default_member_action"];
+                this.list["default_nonmember_action"] = values["default_nonmember_action"];
+                let res = yield cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_1__["DataManager"].send("list", this.list);
+                if (res.title && res.title.startsWith("400") && res.description) {
+                    new cordova_sites__WEBPACK_IMPORTED_MODULE_3__["Toast"](res.description, cordova_sites__WEBPACK_IMPORTED_MODULE_3__["Toast"].DEFAULT_DURATION, false).show();
+                }
+                else {
+                    yield this.finish(res);
+                }
+            }));
+            if (this.list.pw) {
+                this.list.pw = "******";
+            }
+            else {
+                delete this.list.pw;
+            }
+            yield form.setValues(this.list);
+            this.findBy(".delete-password-button").addEventListener("click", (e) => __awaiter(this, void 0, void 0, function* () {
+                e.preventDefault();
+                e.stopPropagation();
+                this.showLoadingSymbol();
+                const res = yield cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_1__["DataManager"].send("deletePassword", { list_id: this.list.list_id });
+                if (res) {
+                    form.setValues({ "pw": "" });
+                }
+                this.removeLoadingSymbol();
+            }));
+            return res;
+        });
     }
 }
-
 cordova_sites__WEBPACK_IMPORTED_MODULE_3__["App"].addInitialization(app => {
     app.addDeepLink("editList", EditListSite);
-})
+});
+
 
 /***/ }),
 
@@ -83357,7 +83509,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var cordova_sites_user_management_dist_client_js_Context_UserSite__WEBPACK_IMPORTED_MODULE_8___default = /*#__PURE__*/__webpack_require__.n(cordova_sites_user_management_dist_client_js_Context_UserSite__WEBPACK_IMPORTED_MODULE_8__);
 /* harmony import */ var cordova_sites_dist_client_js_App__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! cordova-sites/dist/client/js/App */ "./node_modules/cordova-sites/dist/client/js/App.js");
 /* harmony import */ var cordova_sites_dist_client_js_App__WEBPACK_IMPORTED_MODULE_9___default = /*#__PURE__*/__webpack_require__.n(cordova_sites_dist_client_js_App__WEBPACK_IMPORTED_MODULE_9__);
-/* harmony import */ var _CheckMailSite__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./CheckMailSite */ "./src/client/js/Site/CheckMailSite.js");
+/* harmony import */ var _CheckMailSite_ts__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./CheckMailSite.ts */ "./src/client/js/Site/CheckMailSite.ts");
 /* harmony import */ var js_helper__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! js-helper */ "./node_modules/js-helper/dist/shared.js");
 /* harmony import */ var js_helper__WEBPACK_IMPORTED_MODULE_11___default = /*#__PURE__*/__webpack_require__.n(js_helper__WEBPACK_IMPORTED_MODULE_11__);
 
@@ -83507,7 +83659,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var tabulator_tables__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(tabulator_tables__WEBPACK_IMPORTED_MODULE_3__);
 /* harmony import */ var cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! cordova-sites/dist/client/js/DataManager */ "./node_modules/cordova-sites/dist/client/js/DataManager.js");
 /* harmony import */ var cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_4__);
-/* harmony import */ var _EditListSite__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./EditListSite */ "./src/client/js/Site/EditListSite.js");
+/* harmony import */ var _EditListSite_ts__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./EditListSite.ts */ "./src/client/js/Site/EditListSite.ts");
 /* harmony import */ var cordova_sites_dist_client_js_Toast_Toast__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! cordova-sites/dist/client/js/Toast/Toast */ "./node_modules/cordova-sites/dist/client/js/Toast/Toast.js");
 /* harmony import */ var cordova_sites_dist_client_js_Toast_Toast__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(cordova_sites_dist_client_js_Toast_Toast__WEBPACK_IMPORTED_MODULE_6__);
 /* harmony import */ var cordova_sites_dist_client_js_App__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! cordova-sites/dist/client/js/App */ "./node_modules/cordova-sites/dist/client/js/App.js");
@@ -83543,7 +83695,7 @@ class SelectListSite extends cordova_sites__WEBPACK_IMPORTED_MODULE_0__["MenuSit
 
     onCreateMenu(navbar) {
         navbar.addAction(new cordova_sites_dist_client_js_Context_Menu_MenuAction_MenuAction__WEBPACK_IMPORTED_MODULE_2__["MenuAction"]("new entry", async () => {
-            let res = await this.startSite(_EditListSite__WEBPACK_IMPORTED_MODULE_5__["EditListSite"]);
+            let res = await this.startSite(_EditListSite_ts__WEBPACK_IMPORTED_MODULE_5__["EditListSite"]);
             if (this._table && res) {
                 this._table.updateOrAddData([res]);
                 new cordova_sites_dist_client_js_Toast_Toast__WEBPACK_IMPORTED_MODULE_6__["Toast"]("added entry").show();
@@ -83608,7 +83760,7 @@ class SelectListSite extends cordova_sites__WEBPACK_IMPORTED_MODULE_0__["MenuSit
             },
             rowDblClick: async (e, row) => { //trigger an alert message when the row is clicked
                 let id = row._row.data.list_id;
-                let res = await this.startSite(_EditListSite__WEBPACK_IMPORTED_MODULE_5__["EditListSite"], {id: id});
+                let res = await this.startSite(_EditListSite_ts__WEBPACK_IMPORTED_MODULE_5__["EditListSite"], {id: id});
                 if (res) {
                     this._table.updateOrAddData([res]);
                     new cordova_sites_dist_client_js_Toast_Toast__WEBPACK_IMPORTED_MODULE_6__["Toast"]("modified entry").show();
@@ -83657,7 +83809,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _SelectListSite__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./SelectListSite */ "./src/client/js/Site/SelectListSite.js");
 /* harmony import */ var cordova_sites_dist_client_js_Toast_Toast__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! cordova-sites/dist/client/js/Toast/Toast */ "./node_modules/cordova-sites/dist/client/js/Toast/Toast.js");
 /* harmony import */ var cordova_sites_dist_client_js_Toast_Toast__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(cordova_sites_dist_client_js_Toast_Toast__WEBPACK_IMPORTED_MODULE_6__);
-/* harmony import */ var _Fragment_SelectPersonFragment__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../Fragment/SelectPersonFragment */ "./src/client/js/Fragment/SelectPersonFragment.js");
+/* harmony import */ var _Fragment_SelectPersonFragment_ts__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../Fragment/SelectPersonFragment.ts */ "./src/client/js/Fragment/SelectPersonFragment.ts");
 /* harmony import */ var cordova_sites_dist_client_js_Dialog_ConfirmDialog__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! cordova-sites/dist/client/js/Dialog/ConfirmDialog */ "./node_modules/cordova-sites/dist/client/js/Dialog/ConfirmDialog.js");
 /* harmony import */ var cordova_sites_dist_client_js_Dialog_ConfirmDialog__WEBPACK_IMPORTED_MODULE_8___default = /*#__PURE__*/__webpack_require__.n(cordova_sites_dist_client_js_Dialog_ConfirmDialog__WEBPACK_IMPORTED_MODULE_8__);
 /* harmony import */ var cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! cordova-sites/dist/client/js/DataManager */ "./node_modules/cordova-sites/dist/client/js/DataManager.js");
@@ -83682,7 +83834,7 @@ __webpack_require__.r(__webpack_exports__);
 class SelectPersonSite extends cordova_sites_dist_client_js_Context_MenuSite__WEBPACK_IMPORTED_MODULE_0__["MenuSite"] {
     constructor(siteManager) {
         super(siteManager, _html_Site_selectPersonSite_html__WEBPACK_IMPORTED_MODULE_1___default.a);
-        let fragment = new _Fragment_SelectPersonFragment__WEBPACK_IMPORTED_MODULE_7__["SelectPersonFragment"](this);
+        let fragment = new _Fragment_SelectPersonFragment_ts__WEBPACK_IMPORTED_MODULE_7__["SelectPersonFragment"](this);
         this.addFragment("#person-list-fragment", fragment);
         fragment.setOnRowClickedListener(async (e, row) => {
             let id = row._row.data.id;
@@ -83744,6 +83896,10 @@ class SelectPersonSite extends cordova_sites_dist_client_js_Context_MenuSite__WE
                     res = await cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_9__["DataManager"].load("synchronise");
                 } while (res.askAgain);
                 if (res.success) {
+
+                    res = await cordova_sites_dist_client_js_DataManager__WEBPACK_IMPORTED_MODULE_9__["DataManager"].load("synchroniseLists");
+                    console.log(res);
+
                     new cordova_sites_dist_client_js_Toast_Toast__WEBPACK_IMPORTED_MODULE_6__["Toast"]("synchronised!").show();
                 } else {
                     new cordova_sites_dist_client_js_Toast_Toast__WEBPACK_IMPORTED_MODULE_6__["Toast"](res.message).show();
@@ -83798,7 +83954,7 @@ var _translations_en_json__WEBPACK_IMPORTED_MODULE_1___namespace = /*#__PURE__*/
 /* harmony import */ var _shared_model_migrations_PersonInit__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../../shared/model/migrations/PersonInit */ "./src/shared/model/migrations/PersonInit.ts");
 /* harmony import */ var cordova_sites_user_management_dist_client__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! cordova-sites-user-management/dist/client */ "./node_modules/cordova-sites-user-management/dist/client.js");
 /* harmony import */ var cordova_sites_user_management_dist_client__WEBPACK_IMPORTED_MODULE_14___default = /*#__PURE__*/__webpack_require__.n(cordova_sites_user_management_dist_client__WEBPACK_IMPORTED_MODULE_14__);
-/* harmony import */ var _Site_CheckMailSite__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./Site/CheckMailSite */ "./src/client/js/Site/CheckMailSite.js");
+/* harmony import */ var _Site_CheckMailSite_ts__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./Site/CheckMailSite.ts */ "./src/client/js/Site/CheckMailSite.ts");
 /* harmony import */ var cordova_sites_user_management_dist_client_js_UserManager__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! cordova-sites-user-management/dist/client/js/UserManager */ "./node_modules/cordova-sites-user-management/dist/client/js/UserManager.js");
 /* harmony import */ var cordova_sites_user_management_dist_client_js_UserManager__WEBPACK_IMPORTED_MODULE_16___default = /*#__PURE__*/__webpack_require__.n(cordova_sites_user_management_dist_client_js_UserManager__WEBPACK_IMPORTED_MODULE_16__);
 
@@ -83912,10 +84068,10 @@ module.exports = __webpack_require__.p + "css/index.css";
 /*!*****************************************!*\
   !*** ./src/client/translations/de.json ***!
   \*****************************************/
-/*! exports provided: document-title-empty, change user, new entry, synchronise, lists, delete selected persons?, are you sure to delete these persons? they will be gone forever! (that's a long time!), cancel-button, confirm-button, firstname, surname, e-mail, street, house-nr., address suffix, country code, zipcode, city, birthday, comment, send, name, description, subject_prefix, moderator password, allow members to send mails, accept, hold, drop, allow non-members to send mails, owners, members, non-members, wrong password, modified entry, added entry, default */
+/*! exports provided: document-title-empty, change user, new entry, synchronise, lists, delete selected persons?, are you sure to delete these persons? they will be gone forever! (that's a long time!), cancel-button, confirm-button, firstname, surname, e-mail, street, house-nr., address suffix, country code, zipcode, city, birthday, comment, send, name, description, subject_prefix, moderator password, allow members to send mails, accept, hold, reject, drop, allow non-members to send mails, owners, members, non-members, wrong password!, modified entry, added entry, e-mails in hold, synchronised!, reject reason, leave empty for no reason, default */
 /***/ (function(module) {
 
-module.exports = JSON.parse("{\"document-title-empty\":\"SMD-Mail\",\"change user\":\"User bearbeiten\",\"new entry\":\"Neuer Eintrag\",\"synchronise\":\"Synchronisieren\",\"lists\":\"Listen\",\"delete selected persons?\":\"Ausgewählte Personen löschen?\",\"are you sure to delete these persons? they will be gone forever! (that's a long time!)\":\"Willst du die Personen wirklich löschen? Sie werden für immer weg sein! (Eine sehr lange Zeit)\",\"cancel-button\":\"Abbrechen\",\"confirm-button\":\"Okay\",\"firstname\":\"Vorname\",\"surname\":\"Nachname\",\"e-mail\":\"E-Mail\",\"street\":\"Straße\",\"house-nr.\":\"Hausnummer\",\"address suffix\":\"Adresszusatz\",\"country code\":\"Land\",\"zipcode\":\"Postleitzahl\",\"city\":\"Stadt\",\"birthday\":\"Geburtstag\",\"comment\":\"Kommentar\",\"send\":\"Speichern\",\"name\":\"Name\",\"description\":\"Beschreibung\",\"subject_prefix\":\"Betreff-Präfix\",\"moderator password\":\"Moderator Passwort\",\"allow members to send mails\":\"Mitgliedern erlauben, Mails zu senden\",\"accept\":\"Akzeptieren\",\"hold\":\"Halten\",\"drop\":\"Löschen\",\"allow non-members to send mails\":\"Nicht-Mitgliedern erlauben, Mails zu senden\",\"owners\":\"Moderatoren\",\"members\":\"Mitglieder\",\"non-members\":\"Keine Mitglieder\",\"wrong password\":\"Falsches Passwort!\",\"modified entry\":\"Eintrag bearbeitet\",\"added entry\":\"Eintrag hinzugefügt\"}");
+module.exports = JSON.parse("{\"document-title-empty\":\"SMD-Mail\",\"change user\":\"User bearbeiten\",\"new entry\":\"Neuer Eintrag\",\"synchronise\":\"Synchronisieren\",\"lists\":\"Listen\",\"delete selected persons?\":\"Ausgewählte Personen löschen?\",\"are you sure to delete these persons? they will be gone forever! (that's a long time!)\":\"Willst du die Personen wirklich löschen? Sie werden für immer weg sein! (Eine sehr lange Zeit)\",\"cancel-button\":\"Abbrechen\",\"confirm-button\":\"Okay\",\"firstname\":\"Vorname\",\"surname\":\"Nachname\",\"e-mail\":\"E-Mail\",\"street\":\"Straße\",\"house-nr.\":\"Hausnummer\",\"address suffix\":\"Adresszusatz\",\"country code\":\"Land\",\"zipcode\":\"Postleitzahl\",\"city\":\"Stadt\",\"birthday\":\"Geburtstag\",\"comment\":\"Kommentar\",\"send\":\"Speichern\",\"name\":\"Name\",\"description\":\"Beschreibung\",\"subject_prefix\":\"Betreff-Präfix\",\"moderator password\":\"Moderator Passwort (Mind. 8 Zeichen)\",\"allow members to send mails\":\"Mitgliedern erlauben, Mails zu senden\",\"accept\":\"Akzeptieren\",\"hold\":\"Halten\",\"reject\":\"Zurückweisen\",\"drop\":\"Löschen\",\"allow non-members to send mails\":\"Nicht-Mitgliedern erlauben, Mails zu senden\",\"owners\":\"Moderatoren\",\"members\":\"Mitglieder\",\"non-members\":\"Keine Mitglieder\",\"wrong password!\":\"Falsches Passwort!\",\"modified entry\":\"Eintrag bearbeitet\",\"added entry\":\"Eintrag hinzugefügt\",\"e-mails in hold\":\"E-Mails zu bearbeiten:\",\"synchronised!\":\"Synchronisiert!\",\"reject reason\":\"Zurückweisungsgrund:\",\"leave empty for no reason\":\"Leer lassen für keinen Grund\"}");
 
 /***/ }),
 

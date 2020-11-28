@@ -8431,6 +8431,9 @@ body.dark {
         padding-top: 0;
         border-top: 0; } }
 
+#reject-dialog .reject-reason {
+  min-height: 300px; }
+
 #editPersonForm label {
   padding: 0 0.2rem; }
   #editPersonForm label input[type="date"] ~ span {

@@ -108,10 +108,10 @@ define("./service-worker.js",['./workbox-64f1e998'], function (workbox) { 'use s
 
   workbox.precacheAndRoute([{
     "url": "bundle.js",
-    "revision": "799e8b753b486be10d701a4cec1f6ea3"
+    "revision": "41675c667c526133f04c2807b4d3e506"
   }, {
     "url": "css/index.css",
-    "revision": "401e898bc70083a79a6ce599834ffa46"
+    "revision": "f1a313f1b5867d7eca772b168744f99d"
   }, {
     "url": "html/abstractWindowTemplate.html",
     "revision": "aa07ad88ed4c48de7d2247366b69a2a4"
@@ -132,7 +132,7 @@ define("./service-worker.js",['./workbox-64f1e998'], function (workbox) { 'use s
     "revision": "a7285c607fdacd912f47738462150efe"
   }, {
     "url": "html/editListsSite.html",
-    "revision": "29cc79d06d42863f748eb1e543bade63"
+    "revision": "020e67f35bc8b72405cd738c75fdd9f3"
   }, {
     "url": "html/editPersonSite.html",
     "revision": "60171de73cc0489f1a2831d3d4803a26"
@@ -154,6 +154,9 @@ define("./service-worker.js",['./workbox-64f1e998'], function (workbox) { 'use s
   }, {
     "url": "html/registrationSite.html",
     "revision": "5d732604002df8c6eb1f206709bc4b9a"
+  }, {
+    "url": "html/rejectReasonDialog.html",
+    "revision": "46df9188ab553e7023028c28989b0d55"
   }, {
     "url": "html/selectListSite.html",
     "revision": "496b16e87c8f1d43de3f75806994327a"
