@@ -242,7 +242,6 @@ export class ListController extends SyncController {
             const listModel = await MailingList.findOne({"mailmanId": lists.list_id});
             if (listModel !== null) {
                 lists.pw = true;
-                console.log("lists", listModel);
 
             }
         }
@@ -450,7 +449,6 @@ export class ListController extends SyncController {
 
             //TODO filter and delete adresses that are not there
             let oldMails = mails.filter(email => personMails.indexOf(email) === -1);
-            console.log("oldMails", oldMails);
             await Helper.asyncForEach(oldMails, async email => {
                 await api.deleteUser(email);
             })
@@ -472,10 +470,11 @@ export class ListController extends SyncController {
 
     static async synchronizeLists(req, res) {
         const lists = {
-            "ma": "malist",
-            "isa": "isalist",
             "altfreunde": "altfreund",
-            "hauskreise": "hk"
+            "hauskreise": "hk",
+            "international-news": "internationalnews",
+            "isa": "isalist",
+            "ma": "malist",
         }
 
         let api = MailmanApi.getInstance();
@@ -492,7 +491,6 @@ export class ListController extends SyncController {
                     await api.updateList(listId, "default_member_action", "hold");
                     await api.updateList(listId, "default_nonmember_action", "hold");
                     await api.updateList(listId, "respond_to_post_requests", false);
-
                 }
             }
 
