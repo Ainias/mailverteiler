@@ -1228,7 +1228,6 @@ class FileTransferPromise {
     }
     download() {
         return __awaiter(this, void 0, void 0, function* () {
-            debugger;
             let blob = DataManager_1.DataManager.fetchBlob(this.downloadUrl);
             let filePromise = yield FilePromise_1.FilePromise.open(this.storagePath);
             let fileWriter = yield filePromise.createWriter();
@@ -1526,7 +1525,11 @@ class SyncJob {
                         }
                     });
                 }
-                else if ((relations[relation].type === "many-to-one" || (relations[relation].type === "one-to-one" && relations[relation].joinColumn)) && entity[relation]) {
+                else if ((relations[relation].type === "many-to-one"
+                    || (relations[relation].type === "one-to-one" && relations[relation].joinColumn))
+                //DO not check for a value of the relation here. Else If the first entity has no value set, the field
+                // will not be set and therefore ignored for all other entites too
+                ) {
                     let fieldName;
                     if (relations[relation].joinColumn && relations[relation].joinColumn.name) {
                         fieldName = relations[relation].joinColumn.name;
@@ -1615,7 +1618,7 @@ class SyncJob {
             tableName = shared_1.Helper.toSnakeCase(tableName);
             let columns = schemaDefinition.columns;
             //Get fields from entity for including relation fields
-            let fields = Object.keys(changedEntities[0]);
+            const fields = Object.keys(changedEntities[0]);
             let values = [];
             let valueStrings = [];
             yield shared_1.Helper.asyncForEach(changedEntities, (entity) => __awaiter(this, void 0, void 0, function* () {
@@ -2299,6 +2302,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(__webpack_require__(/*! ./shared/EasySyncBaseModel */ "./node_modules/cordova-sites-easy-sync/dist/shared/EasySyncBaseModel.js"), exports);
 __exportStar(__webpack_require__(/*! ./shared/EasySyncPartialModel */ "./node_modules/cordova-sites-easy-sync/dist/shared/EasySyncPartialModel.js"), exports);
 __exportStar(__webpack_require__(/*! ./shared/FileMedium */ "./node_modules/cordova-sites-easy-sync/dist/shared/FileMedium.js"), exports);
+__exportStar(__webpack_require__(/*! ./shared/migrations/AddFileMediumMigration */ "./node_modules/cordova-sites-easy-sync/dist/shared/migrations/AddFileMediumMigration.js"), exports);
 //# sourceMappingURL=shared.js.map
 
 /***/ }),
@@ -2693,6 +2697,9 @@ class FileMedium extends EasySyncBaseModel_1.EasySyncBaseModel {
             return this.getServerUrl();
         }
     }
+    setSrc(src) {
+        this.src = src;
+    }
     toString() {
         console.warn("to string called on FileMedium. Only for dependency. Please look inside your sourcecode");
         return this.getUrl();
@@ -2703,6 +2710,51 @@ FileMedium.PUBLIC_PATH = "./";
 FileMedium.SCHEMA_NAME = "FileMedium";
 BaseDatabase_1.BaseDatabase.addModel(FileMedium);
 //# sourceMappingURL=FileMedium.js.map
+
+/***/ }),
+
+/***/ "./node_modules/cordova-sites-easy-sync/dist/shared/migrations/AddFileMediumMigration.js":
+/*!***********************************************************************************************!*\
+  !*** ./node_modules/cordova-sites-easy-sync/dist/shared/migrations/AddFileMediumMigration.js ***!
+  \***********************************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AddFileMediumMigration1000000011000 = void 0;
+const js_helper_1 = __webpack_require__(/*! js-helper */ "./node_modules/js-helper/dist/shared.js");
+const FileMedium_1 = __webpack_require__(/*! ../FileMedium */ "./node_modules/cordova-sites-easy-sync/dist/shared/FileMedium.js");
+class AddFileMediumMigration1000000011000 {
+    down(queryRunner) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return Promise.resolve(undefined);
+        });
+    }
+    up(queryRunner) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let table = js_helper_1.MigrationHelper.createTableFromModelClass(FileMedium_1.FileMedium);
+            table.columns.forEach(column => {
+                if (column.name === "src") {
+                    column.type = js_helper_1.MigrationHelper.isServer() ? "MEDIUMTEXT" : "TEXT";
+                }
+            });
+            yield queryRunner.createTable(table);
+        });
+    }
+}
+exports.AddFileMediumMigration1000000011000 = AddFileMediumMigration1000000011000;
+//# sourceMappingURL=AddFileMediumMigration.js.map
 
 /***/ }),
 
@@ -6362,7 +6414,7 @@ class AlphabeticListFragment extends AbstractFragment_1.AbstractFragment {
         let currentLetter = 'A';
         let currentSegment = this.findBy(".alphabet-section.A");
         Object.keys(this._elements).forEach(key => {
-            let newLetter = key.substring(0, 1).toUpperCase();
+            let newLetter = key.trim().substring(0, 1).toUpperCase();
             if (newLetter !== currentLetter) {
                 currentLetter = newLetter;
                 let newSegment = this.findBy(".alphabet-section." + newLetter);
@@ -7258,7 +7310,7 @@ class NavbarFragment extends AbstractFragment_1.AbstractFragment {
                         // @ts-ignore
                         const resizeObserver = new ResizeObserver(entries => {
                             entries.forEach(entry => {
-                                console.log("entry", entry);
+                                navbarElem.style = "min-height:" + entry.borderBoxSize[0].blockSize + "px";
                             });
                         });
                         resizeObserver.observe(heightElement);
@@ -9114,16 +9166,18 @@ exports.ConfirmDialog = void 0;
 const Dialog_1 = __webpack_require__(/*! ./Dialog */ "./node_modules/cordova-sites/dist/client/js/Dialog/Dialog.js");
 const Helper_1 = __webpack_require__(/*! ../Legacy/Helper */ "./node_modules/cordova-sites/dist/client/js/Legacy/Helper.js");
 class ConfirmDialog extends Dialog_1.Dialog {
-    constructor(content, title) {
+    constructor(content, title, confirmButtonText, cancelButtonText) {
         super(content, title);
+        this.confirmButtonText = Helper_1.Helper.nonNull(confirmButtonText, "confirm-button");
+        this.cancelButtonText = Helper_1.Helper.nonNull(cancelButtonText, "cancel-button");
     }
     show() {
         const _super = Object.create(null, {
             show: { get: () => super.show }
         });
         return __awaiter(this, void 0, void 0, function* () {
-            this.addButton("confirm-button", true);
-            this.addButton("cancel-button", false);
+            this.addButton(this.confirmButtonText, true);
+            this.addButton(this.cancelButtonText, false);
             return _super.show.call(this);
         });
     }
@@ -12230,6 +12284,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(__webpack_require__(/*! ./client/HotkeyManager */ "./node_modules/js-helper/dist/client/HotkeyManager.js"), exports);
+__exportStar(__webpack_require__(/*! ./client/InputSelect */ "./node_modules/js-helper/dist/client/InputSelect.js"), exports);
 __exportStar(__webpack_require__(/*! ./client/ViewHelper */ "./node_modules/js-helper/dist/client/ViewHelper.js"), exports);
 //# sourceMappingURL=client.js.map
 
@@ -12262,7 +12317,6 @@ class HotkeyManager {
             }
         });
         window.addEventListener("keyup", e => {
-            console.log("keyUp", e.key, e);
             this._keys[e.key.toLowerCase()] = false;
         });
     }
@@ -12298,6 +12352,123 @@ class HotkeyManager {
 }
 exports.HotkeyManager = HotkeyManager;
 //# sourceMappingURL=HotkeyManager.js.map
+
+/***/ }),
+
+/***/ "./node_modules/js-helper/dist/client/InputSelect.js":
+/*!***********************************************************!*\
+  !*** ./node_modules/js-helper/dist/client/InputSelect.js ***!
+  \***********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.InputSelect = void 0;
+const Helper_1 = __webpack_require__(/*! ../shared/Helper */ "./node_modules/js-helper/dist/shared/Helper.js");
+const ViewHelper_1 = __webpack_require__(/*! ./ViewHelper */ "./node_modules/js-helper/dist/client/ViewHelper.js");
+class InputSelect {
+    constructor(element, options) {
+        this.onChangeListeners = [];
+        if (typeof element === "string") {
+            element = document.querySelector(element);
+        }
+        this.options = new Map();
+        this.inputElement = element;
+        options.forEach(o => {
+            if (typeof o === "string") {
+                o = { value: o, label: o };
+            }
+            o.selected = Helper_1.Helper.nonNull(o.selected, false);
+            this.options.set(o.value, o);
+            return o;
+        });
+        this.buildElement();
+    }
+    onChange(listener) {
+        this.onChangeListeners.push(listener);
+    }
+    buildElement() {
+        const parent = this.inputElement.parentElement;
+        this.container = document.createElement("div");
+        this.container.classList.add("input-select-container");
+        const flexContainer = document.createElement("div");
+        flexContainer.classList.add("input-select-flex");
+        this.selectedOptionsContainer = document.createElement("span");
+        this.selectedOptionsContainer.classList.add("input-select-selected-options");
+        const classes = [];
+        this.inputElement.classList.forEach(c => {
+            this.container.classList.add(c);
+            classes.push(c);
+        });
+        this.inputElement.classList.remove(...classes);
+        this.inputElement.classList.add("input-select-input");
+        this.optionsContainer = document.createElement("div");
+        this.optionsContainer.classList.add("input-select-options");
+        parent.insertBefore(this.container, this.inputElement);
+        this.inputElement.remove();
+        this.container.appendChild(flexContainer);
+        this.container.appendChild(this.optionsContainer);
+        flexContainer.appendChild(this.selectedOptionsContainer);
+        flexContainer.appendChild(this.inputElement);
+        if ("ResizeObserver" in window) {
+            // @ts-ignore
+            const resizeObserver = new ResizeObserver(entries => {
+                entries.forEach(entry => {
+                    this.optionsContainer.style.width = entry.borderBoxSize[0].inlineSize + "px";
+                });
+            });
+            resizeObserver.observe(this.container);
+        }
+        this.inputElement.addEventListener("input", () => this.updateOptions());
+        this.updateOptions();
+    }
+    updateOptions() {
+        ViewHelper_1.ViewHelper.removeAllChildren(this.selectedOptionsContainer);
+        ViewHelper_1.ViewHelper.removeAllChildren(this.optionsContainer);
+        const inputValue = this.inputElement.value;
+        this.options.forEach(o => {
+            const optionElement = document.createElement("span");
+            optionElement.classList.add("input-select-option");
+            optionElement.dataset["value"] = o.value;
+            optionElement.innerText = o.label;
+            if (o.selected) {
+                this.selectedOptionsContainer.appendChild(optionElement);
+            }
+            else if (o.label.indexOf(inputValue) !== -1) {
+                this.optionsContainer.appendChild(optionElement);
+            }
+            optionElement.addEventListener("click", (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                e.cancelBubble = true;
+                this.toggle(o.value);
+            });
+        });
+    }
+    toggle(value) {
+        const option = this.options.get(value);
+        if (option) {
+            option.selected = !option.selected;
+            this.updateOptions();
+            this.onChangeListeners.forEach(listener => {
+                listener(option, this);
+            });
+        }
+    }
+    getOptions() {
+        return Array.from(this.options.values());
+    }
+    getSelectedOptions() {
+        return this.getOptions().filter(o => o.selected);
+    }
+    getSelectedValues() {
+        return this.getSelectedOptions().map(o => o.value);
+    }
+}
+exports.InputSelect = InputSelect;
+//# sourceMappingURL=InputSelect.js.map
 
 /***/ }),
 
@@ -12377,6 +12548,7 @@ __exportStar(__webpack_require__(/*! ./shared/Helper */ "./node_modules/js-helpe
 __exportStar(__webpack_require__(/*! ./shared/JsonHelper */ "./node_modules/js-helper/dist/shared/JsonHelper.js"), exports);
 __exportStar(__webpack_require__(/*! ./shared/MigrationHelper */ "./node_modules/js-helper/dist/shared/MigrationHelper.js"), exports);
 __exportStar(__webpack_require__(/*! ./shared/Prioritized */ "./node_modules/js-helper/dist/shared/Prioritized.js"), exports);
+__exportStar(__webpack_require__(/*! ./shared/PromiseWithHandlers */ "./node_modules/js-helper/dist/shared/PromiseWithHandlers.js"), exports);
 __exportStar(__webpack_require__(/*! ./shared/Random */ "./node_modules/js-helper/dist/shared/Random.js"), exports);
 __exportStar(__webpack_require__(/*! ./shared/XSSHelper */ "./node_modules/js-helper/dist/shared/XSSHelper.js"), exports);
 //# sourceMappingURL=shared.js.map
@@ -12453,12 +12625,12 @@ class DateHelper {
         }, zeroPad = function (nNum, nPad) {
             return ('' + (Math.pow(10, nPad) + nNum)).slice(1);
         };
-        return sFormat.replace(/%[a-z]/gi, function (sMatch) {
+        return sFormat.replace(/%[a-z]/gi, (sMatch) => {
             return {
-                '%a': aDaysShort[nDay],
-                '%A': aDays[nDay],
-                '%b': aMonths[nMonth].slice(0, 3),
-                '%B': aMonths[nMonth],
+                '%a': this.translate(aDaysShort[nDay]),
+                '%A': this.translate(aDays[nDay]),
+                '%b': this.translate(aMonths[nMonth].slice(0, 3)),
+                '%B': this.translate(aMonths[nMonth]),
                 '%c': date.toUTCString(),
                 '%C': Math.floor(nYear / 100),
                 '%d': zeroPad(nDate, 2),
@@ -12488,6 +12660,15 @@ class DateHelper {
                 '%Z': date.toTimeString().replace(/.+\((.+?)\)$/, '$1')
             }[sMatch] || sMatch;
         });
+    }
+    static translate(key) {
+        if (this.translationCallback) {
+            return this.translationCallback(key);
+        }
+        return key;
+    }
+    static setTranslationCallback(callback) {
+        this.translationCallback = callback;
     }
 }
 exports.DateHelper = DateHelper;
@@ -13221,6 +13402,47 @@ exports.Prioritized = Prioritized;
 
 /***/ }),
 
+/***/ "./node_modules/js-helper/dist/shared/PromiseWithHandlers.js":
+/*!*******************************************************************!*\
+  !*** ./node_modules/js-helper/dist/shared/PromiseWithHandlers.js ***!
+  \*******************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PromiseWithHandlers = void 0;
+class PromiseWithHandlers extends Promise {
+    constructor(executor) {
+        let resolver = null;
+        let rejecter = null;
+        super((res, rej) => {
+            resolver = res;
+            rejecter = rej;
+            if (executor) {
+                executor(resolver, rejecter);
+            }
+        });
+        this.resolver = resolver;
+        this.rejecter = rejecter;
+    }
+    resolve(value) {
+        if (this.resolver) {
+            this.resolver(value);
+        }
+    }
+    reject(value) {
+        if (this.rejecter) {
+            this.rejecter(value);
+        }
+    }
+}
+exports.PromiseWithHandlers = PromiseWithHandlers;
+//# sourceMappingURL=PromiseWithHandlers.js.map
+
+/***/ }),
+
 /***/ "./node_modules/js-helper/dist/shared/Random.js":
 /*!******************************************************!*\
   !*** ./node_modules/js-helper/dist/shared/Random.js ***!
@@ -13232,6 +13454,7 @@ exports.Prioritized = Prioritized;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Random = void 0;
+const Helper_1 = __webpack_require__(/*! ./Helper */ "./node_modules/js-helper/dist/shared/Helper.js");
 let Random = /** @class */ (() => {
     class Random {
         static seedRandom(seed) {
@@ -13245,6 +13468,15 @@ let Random = /** @class */ (() => {
         }
         static getIntRandom(maxValue) {
             return Math.floor(Random.getRandom() * (maxValue + 1));
+        }
+        static getStringRandom(numSigns, alphabet) {
+            alphabet = Helper_1.Helper.nonNull(alphabet, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+            let random = "";
+            const numAlphabet = alphabet.length - 1;
+            for (let i = 0; i < numSigns; i++) {
+                random += alphabet[Random.getIntRandom(numAlphabet)];
+            }
+            return random;
         }
     }
     Random._seed = new Date().getTime();
