@@ -101,8 +101,8 @@ app.use(function (err, req, res, next) {
 EasySyncServerDb.getInstance()._connectionPromise.then(async () => {
     MailmanApi.init(process.env.MAILMAN_URL, process.env.MAILMAN_USER, process.env.MAILMAN_PASSWORD);
 
-    // let api = MailmanApi.getInstance();
-    // console.log(await api.versions());
+    let api = MailmanApi.getInstance();
+    console.log(await api.versions());
 
     app.listen(port, async () => {
         console.log("listening on port " + port);

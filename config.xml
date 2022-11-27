@@ -1,14 +1,13 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget android-versionCode="1" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
-    <name>Mailverteiler</name>
+<widget id="io.cordova.hellocordova" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>HelloCordova</name>
     <description>
-        Eine Mailverteilerverwaltungsoberfläche für Mailman-3. Bietet die Möglichkeit noch mehr Daten über Nutzer zu speichern
+        A sample Apache Cordova application that responds to the deviceready event.
     </description>
-    <author email="mailverteiler@silas.link">
-        Silas Günther
+    <author email="dev@cordova.apache.org" href="http://cordova.io">
+        Apache Cordova Team
     </author>
     <content src="index.html" />
-    <plugin name="cordova-plugin-whitelist" spec="1" />
     <access origin="*" />
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
@@ -23,12 +22,4 @@
         <allow-intent href="itms:*" />
         <allow-intent href="itms-apps:*" />
     </platform>
-    <plugin name="cordova-plugin-webpack" spec="^0.4.7" />
-    <plugin name="cordova-plugin-nativestorage" spec="^2.3.2" />
-    <plugin name="cordova-plugin-tts" spec="^0.2.3" />
-    <plugin name="cordova-plugin-file" spec="^6.0.2" />
-    <plugin name="cordova-sqlite-storage" spec="^5.0.0" />
-    <plugin name="cordova-plugin-device" spec="^2.0.3" />
-    <engine name="android" spec="^8.1.0" />
-    <engine name="ios" spec="^5.1.1" />
 </widget>

@@ -3,7 +3,6 @@ import {MailmanApi} from "../MailmanApi";
 import {Person} from "../../../../shared/model/Person";
 import {Helper} from "js-helper/dist/shared/Helper";
 import {In, IsNull, Not, QueryBuilder, SelectQueryBuilder} from "typeorm/index";
-import * as typeorm from "typeorm";
 import {EasySyncServerDb} from "cordova-sites-easy-sync/dist/server/EasySyncServerDb";
 import {MailingList} from "../../../../shared/model/MailingList";
 
@@ -343,8 +342,10 @@ export class ListController extends SyncController {
         let user_id = req.body.subscriber;
         let role = Helper.nonNull(req.body.role, "member");
 
+
         let api = MailmanApi.getInstance();
-        let membership = await api.joinList(list_id, user_id, role, null, true, true, true, false);
+        let membership = await api.joinList(list_id, req.body.subscriberMail, role, null, true, true, true, false);
+        // membership = await api.getMembership(list_id, req.body.subscriberMail, role)
 
         if (membership !== undefined) {
             return res.json(membership);
@@ -426,7 +427,7 @@ export class ListController extends SyncController {
         const MAX_ENTRIES = 10;
 
         //From Mailman to program
-        if (mailmanAddresses.entries) {
+        if (mailmanAddresses.entries && false) {
             let mails = [];
             mailmanAddresses.entries.forEach(entry => {
                 if (entry.user) {
@@ -455,7 +456,7 @@ export class ListController extends SyncController {
         }
 
         //From program to mailman
-        let persons = await Person.find({"mailmanId": IsNull()}, undefined, MAX_ENTRIES)
+        let persons = await Person.find({"mailmanId": IsNull(), "email": Not("")}, undefined, MAX_ENTRIES)
         await Helper.asyncForEach(persons, async person => {
             await this._addOrUpdatePerson(person.mailmanId, person.email);
         });
@@ -501,12 +502,12 @@ export class ListController extends SyncController {
             const currentMemberMails = currentMembers.map(m => m.email);
             const personsToAdd = personsThatShouldBeInList.filter(person => currentMemberMails.indexOf(person.email) === -1);
 
-            console.log("has to add " + personsToAdd.length + " persons to maillist " + listId);
+            // console.log("has to add " + personsToAdd.length + " persons to maillist " + listId);
             listId = list + "." + process.env.DOMAIN_NAME;
             await Helper.asyncForEach(personsToAdd, async person => {
                 const res = await api.joinList(listId, person.mailmanId, null, null, true, true, true, false);
             });
-            console.log("done adding " + personsToAdd.length + " persons to maillist " + listId);
+            // console.log("done adding " + personsToAdd.length + " persons to maillist " + listId);
         }, true);
         return res.json({success: true});
     }

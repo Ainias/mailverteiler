@@ -1,25 +1,42 @@
 {
-  "version": "2.0.2",
   "compilerOptions": {
-    "lib": ["es5", "es2015.promise", "dom", "es2015", "es6"],
+    "module": "commonjs",
     "target": "es6",
+    "lib": [
+      "es6",
+      "es2016",
+      "es2017",
+      "es2021",
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "jsx": "preserve",
     "moduleResolution": "node",
-    "emitDecoratorMetadata": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "typeRoots": ["./node_modules/@types", "./node_modules/react-bootstrap-mobile/src/types"],
+
+
     "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
-    "sourceMap": true,
-    "allowJs": true
+    "emitDecoratorMetadata": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "incremental": true,
+    "strict": false,
+
   },
   "include": [
-//    "./node_modules/cordova-sites/**/*",
-//    "./node_modules/cordova-sites-database/**/*",
-//    "./node_modules/cordova-sites-easy-sync/**/*",
-//    "./node_modules/cordova-sites-user-management/**/*",
-    //    "./node_modules/js-helper/**/*",
-    "./src/client/**/*",
-    "./src/shared/**/*"
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "node_modules/react-bootstrap-mobile/src",
+    "node_modules/echarts-wordcloud"
   ],
-  "exclude": [],
-  "emitDecoratorMetadata": true,
-  "experimentalDecorators": true
+  "exclude": [
+    //    "node_modules"
+  ]
 }

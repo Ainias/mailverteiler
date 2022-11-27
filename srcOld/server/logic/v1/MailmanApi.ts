@@ -1,6 +1,7 @@
 import * as https from "https";
 import * as querystring from "querystring";
 import {Helper} from "js-helper/dist/shared/Helper";
+import * as http from "http";
 
 export class MailmanApi {
     private readonly _rootUrl: string;
@@ -27,12 +28,13 @@ export class MailmanApi {
         return new Promise((resolve, reject) => {
             let url = new URL(this._rootUrl + path);
             let options = {
-                host: url.host,
+                host: url.hostname,
+                port: url.port,
                 path: url.pathname,
                 auth: this._username + ":" + this._password,
             }
 
-            let req = https.get(options, res => {
+            let req = (url.protocol === "http:" ? http:https).get(options, res => {
                 res.setEncoding("utf8");
                 let body = "";
                 res.on("data", data => {
@@ -52,6 +54,7 @@ export class MailmanApi {
                 });
             });
             req.on("error", (e) => {
+                debugger;
                 reject(e);
             });
         });
@@ -69,7 +72,8 @@ export class MailmanApi {
 
             let url = new URL(this._rootUrl + path);
             let options = {
-                host: url.host,
+                host: url.hostname,
+                port: url.port,
                 path: url.pathname,
                 auth: this._username + ":" + this._password,
                 method: method,
@@ -79,8 +83,7 @@ export class MailmanApi {
                 }
             }
 
-            const req = https.request(options, res => {
-                res.setEncoding("utf8");
+            const req = (url.protocol === "http:" ? http:https).request(options, res => {
                 // console.log(res.statusCode);
                 let body = "";
                 res.on("data", data => {
