@@ -1,5 +1,5 @@
-import {User} from "./User";
-import {Access} from "./Access";
-import {Role} from "./Role";
+import {User} from "../application/UserManagement/User";
+import {Access} from "../application/UserManagement/Access";
+import {Role} from "../application/UserManagement/Role";
 
 export const syncModels = [User, Access, Role];

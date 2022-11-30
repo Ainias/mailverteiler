@@ -13,7 +13,8 @@ import '../sass/app.scss';
 import setLanguage from 'next-translate/setLanguage';
 import { useT } from '../application/hooks/useT';
 import { HrefLinks } from '../application/components/HrefLinks';
-import {prepareConnection} from "../application/typeorm/prepareConnection";
+import {prepareBrowserConnection} from "../application/typeorm/prepareBrowserConnection";
+import {UserTokenHandler} from "../application/UserManagement/UserTokenHandler";
 
 export default function MyApp({ Component, pageProps, router }: AppProps) {
     const currentSite = useMemo(() => ({ Component, pageProps, router }), [Component, pageProps, router]);
@@ -34,7 +35,7 @@ export default function MyApp({ Component, pageProps, router }: AppProps) {
     );
 
     useEffect(() => {
-        prepareConnection().catch(e => console.error(e));
+        prepareBrowserConnection().catch(e => console.error(e));
     }, []);
 
     const defaultTopBarOptions = useMemo(
@@ -48,9 +49,10 @@ export default function MyApp({ Component, pageProps, router }: AppProps) {
         <>
             <HrefLinks />
             <Script src="/localforage.js" strategy="beforeInteractive" />
+            <UserTokenHandler/>
             <StyleProvider value={{ insertCss: addStyles }}>
                 <div className="material-design" style={{ width: '100%', height: '100%' }}>
-                    {/* <div className="material-design" style={{ width: '100%', height: '100%' }}> */}
+                    {/* <div className="flat-design" style={{ width: '100%', height: '100%' }}> */}
                     <Sites currentSite={currentSite} router={router} defaultTopBarOptions={defaultTopBarOptions} />
                 </div>
             </StyleProvider>

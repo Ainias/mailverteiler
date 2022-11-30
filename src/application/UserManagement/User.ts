@@ -1,6 +1,6 @@
 import {Column, Entity, JoinTable, ManyToMany} from 'typeorm';
 import {SyncModel} from 'typeorm-sync';
-import {GlobalRef} from '../application/GlobalRef';
+import {GlobalRef} from '../GlobalRef';
 import {Role} from "./Role";
 
 @Entity()
@@ -27,6 +27,16 @@ class User extends SyncModel {
     @ManyToMany(() => Role)
     @JoinTable({name: "userRole"})
     roles?: Role[];
+
+    toJSON(){
+        console.log("LOG-d calling to-json");
+        return {
+            ...this,
+            email: "",
+            password: "",
+            salt: "",
+        }
+    }
 }
 
 const Saved = new GlobalRef<typeof User>('model.User');

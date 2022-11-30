@@ -1,8 +1,8 @@
 import { Database, DatabaseOptions } from 'typeorm-sync/dist';
 import SQLjs from 'sql.js';
 import {syncModels} from "../../models/syncModels";
-import {fetcher, post} from "../fetcher";
-import {JSONObject, JSONValue} from "js-helper";
+import { post} from "../fetcher";
+import {JSONValue} from "js-helper";
 
 let connectionPromise: Promise<Database> | null = null;
 

@@ -1,6 +1,6 @@
 import {Column, Entity, JoinTable, ManyToMany} from 'typeorm';
 import {SyncModel} from 'typeorm-sync';
-import {GlobalRef} from '../application/GlobalRef';
+import {GlobalRef} from '../GlobalRef';
 import {Access} from "./Access";
 
 @Entity()

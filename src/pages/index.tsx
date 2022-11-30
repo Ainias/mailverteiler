@@ -1,18 +1,18 @@
-import React, {useEffect} from 'react';
-import { NextPage } from 'next';
-import { SiteLink } from 'cordova-sites';
-import {prepareConnection} from "../application/typeorm/prepareConnection";
+import React from 'react';
+import {NextPage} from 'next';
+import {SiteLink} from 'cordova-sites';
 import {MultipleInitialResult, waitForSyncRepository} from "typeorm-sync";
-import {User} from "../models/User";
-import {useFind, useInitialResult} from "typeorm-sync-nextjs";
+import {User} from "../application/UserManagement/User";
+import {useInitialResult} from "typeorm-sync-nextjs";
 import {Button, LoadingCircle, Text} from "react-bootstrap-mobile";
+import {prepareInitialProps} from "../application/helpers/prepareInitialProps";
 
-export type IndexProps = {initialUsers: MultipleInitialResult<typeof User>};
+export type IndexProps = { initialUsers: MultipleInitialResult<typeof User> };
 
 function Index({initialUsers}: IndexProps) {
     // Variables
-    const [users, isLoading, error, reload] = useInitialResult(initialUsers, 10);
-    console.log("LOG-d users", users);
+    const [users, isLoading, _, reload] = useInitialResult(initialUsers, 10);
+    // console.log("LOG-d users", users, error);
 
     // Refs
 
@@ -33,16 +33,16 @@ function Index({initialUsers}: IndexProps) {
         {users.map(user => <div key={user.id}>{user.username}</div>)}
         <div>{!!isLoading && <LoadingCircle/>}</div>
         <SiteLink href={"login"}>Go to login</SiteLink>
-        </>;
+    </>;
 }
 
 // Need IndexMemo for autocompletion of phpstorm
 const IndexMemo = React.memo(Index) as NextPage<IndexProps>;
-IndexMemo.getInitialProps = async ({ query, res }) => {
-    await prepareConnection();
-    const questionRepository = await waitForSyncRepository(User);
-    const users = await questionRepository.initialFind({relations: ["roles"]});
-    return { initialUsers: users };
-};
+IndexMemo.getInitialProps = prepareInitialProps(async () => {
+    console.log("LOG-d running initialProps");
+    const userRepositoryRepository = await waitForSyncRepository(User);
+    const users = await userRepositoryRepository.initialFind({relations: ["roles"]});
+    return {initialUsers: users};
+});
 
 export default IndexMemo;

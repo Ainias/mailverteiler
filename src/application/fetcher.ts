@@ -1,4 +1,4 @@
-import {JSONObject, JSONValue} from "js-helper";
+import {JSONObject} from "js-helper";
 
 let savedDefaultOptions: RequestInit = {
     credentials: "same-origin",
@@ -11,6 +11,11 @@ export type RequestParams = Record<string, string | number | boolean>;
 
 export function updateDefaultOptions(defaultOptions: RequestInit) {
     savedDefaultOptions = {...savedDefaultOptions, ...defaultOptions}
+}
+
+export function updateDefaultHeaders(defaultHeaders: Record<string, string>, replaceAll = false) {
+    const headers = replaceAll ? defaultHeaders : {...savedDefaultOptions.headers, ...defaultHeaders};
+    updateDefaultOptions({headers});
 }
 
 export function fetcher(url: string, options?: RequestInit) {

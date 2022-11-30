@@ -1,6 +1,6 @@
 import {Column, Entity} from 'typeorm';
 import {SyncModel} from 'typeorm-sync';
-import {GlobalRef} from '../application/GlobalRef';
+import {GlobalRef} from '../GlobalRef';
 
 @Entity()
 class Access extends SyncModel {

@@ -2,7 +2,7 @@ import { Database, DatabaseOptions } from 'typeorm-sync/dist';
 import { GlobalRef } from '../GlobalRef';
 import {syncModels} from "../../models/syncModels";
 
-const connectionPromise = new GlobalRef<Promise<any>>('bat.database');
+const connectionPromise = new GlobalRef<Promise<Database>>('smd-mail.database');
 
 Database.setSyncModels(syncModels);
 

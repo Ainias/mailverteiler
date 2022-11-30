@@ -1,9 +1,9 @@
-import { prepareBrowserConnection } from './prepareBrowserConnection';
-import { prepareServerConnection } from './prepareServerConnection';
+import {prepareBrowserConnection} from "./prepareBrowserConnection";
+import {prepareServerConnection} from "./prepareServerConnection";
 
-export function prepareConnection() {
-    if (typeof window !== 'undefined') {
-        return prepareBrowserConnection();
+export async function prepareConnection() {
+    if (typeof window === "undefined") {
+        return prepareServerConnection();
     }
-    return prepareServerConnection();
+    return prepareBrowserConnection();
 }
