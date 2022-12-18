@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "target": "es6",
     "lib": [
       "es6",
@@ -12,21 +13,20 @@
       "esnext"
     ],
     "allowJs": true,
-    "jsx": "preserve",
-    "moduleResolution": "node",
-    "noEmit": true,
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
     "skipLibCheck": true,
-    "typeRoots": ["./node_modules/@types", "./node_modules/react-bootstrap-mobile/src/types"],
-
-
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
     "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
     "isolatedModules": true,
+    "jsx": "preserve",
     "incremental": true,
+    "noEmit": true,
     "strict": false,
+    "typeRoots": ["./node_modules/@types", "./node_modules/react-bootstrap-mobile/src/types"]
+
+
 
   },
   "include": [
@@ -34,7 +34,6 @@
     "**/*.ts",
     "**/*.tsx",
     "node_modules/react-bootstrap-mobile/src",
-    "node_modules/echarts-wordcloud"
   ],
   "exclude": [
     //    "node_modules"

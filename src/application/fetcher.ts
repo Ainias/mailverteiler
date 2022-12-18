@@ -7,7 +7,6 @@ let savedDefaultOptions: RequestInit = {
     }
 }
 
-export type RequestParams = Record<string, string | number | boolean>;
 
 export function updateDefaultOptions(defaultOptions: RequestInit) {
     savedDefaultOptions = {...savedDefaultOptions, ...defaultOptions}
@@ -18,17 +17,17 @@ export function updateDefaultHeaders(defaultHeaders: Record<string, string>, rep
     updateDefaultOptions({headers});
 }
 
-export function fetcher(url: string, options?: RequestInit) {
-    return fetch(url, {...savedDefaultOptions, ...options}).then(r => r.json());
+export function fetcher<Result = any>(url: string, options?: RequestInit) {
+    return fetch(url, {...savedDefaultOptions, ...options}).then(r => r.json()) as Result;
 }
 
-export function get(url: string, params?: RequestParams, options?: RequestInit) {
+export function get<Result = any>(url: string, params?: RequestParams, options?: RequestInit) {
     if (params) {
         url += "?" + Object.entries(params).map(([key, val]) => encodeURIComponent(key) + "=" + encodeURIComponent(val)).join("&");
     }
-    return fetcher(url, {...options, method: "GET"})
+    return fetcher<Result>(url, {...options, method: "GET"})
 }
 
-export function post(url: string, params?: JSONObject, options?: RequestInit) {
-    return fetcher(url, {...options, method: "POST", body: JSON.stringify(params)})
+export function post<Result = any>(url: string, params?: JSONObject, options?: RequestInit) {
+    return fetcher<Result>(url, {...options, method: "POST", body: JSON.stringify(params)})
 }

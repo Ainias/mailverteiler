@@ -1,7 +1,8 @@
-import {Column, Entity, JoinTable, ManyToMany} from 'typeorm';
+import {Column, Entity, JoinTable, ManyToMany, OneToMany} from 'typeorm';
 import {SyncModel} from 'typeorm-sync';
 import {GlobalRef} from '../GlobalRef';
 import {Role} from "./Role";
+import {Device} from "./Device";
 
 @Entity()
 class User extends SyncModel {
@@ -28,8 +29,10 @@ class User extends SyncModel {
     @JoinTable({name: "userRole"})
     roles?: Role[];
 
+    @OneToMany(() => Device, device => device.user)
+    devices?: Device[]
+
     toJSON(){
-        console.log("LOG-d calling to-json");
         return {
             ...this,
             email: "",
@@ -38,6 +41,8 @@ class User extends SyncModel {
         }
     }
 }
+
+export type UserType = User;
 
 const Saved = new GlobalRef<typeof User>('model.User');
 if (!Saved.value()) {

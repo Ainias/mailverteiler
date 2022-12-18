@@ -38,8 +38,7 @@ function Index({initialUsers}: IndexProps) {
 
 // Need IndexMemo for autocompletion of phpstorm
 const IndexMemo = React.memo(Index) as NextPage<IndexProps>;
-IndexMemo.getInitialProps = prepareInitialProps(async () => {
-    console.log("LOG-d running initialProps");
+IndexMemo.getInitialProps = prepareInitialProps(async ({req}) => {
     const userRepositoryRepository = await waitForSyncRepository(User);
     const users = await userRepositoryRepository.initialFind({relations: ["roles"]});
     return {initialUsers: users};
