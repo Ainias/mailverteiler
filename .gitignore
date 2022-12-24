@@ -9,7 +9,6 @@
 plugins/*
 platforms/*
 
-mailman/
 mailman.cfg
 
 /www/*

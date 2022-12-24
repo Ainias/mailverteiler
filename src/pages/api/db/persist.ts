@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { persistFromClient, SyncContainer } from 'typeorm-sync/dist';
-import {prepareApi} from "../../../application/helpers/prepareApi";
+import {prepareApi} from "../../../application/helpers/prepare/prepareApi";
 
 type Data = {
     success: boolean;

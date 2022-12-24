@@ -1,8 +1,8 @@
 import { Database, DatabaseOptions } from 'typeorm-sync/dist';
 import SQLjs from 'sql.js';
 import {syncModels} from "../../models/syncModels";
-import { post} from "../fetcher";
 import {JSONValue} from "js-helper";
+import {fetcher} from "../fetcher";
 
 let connectionPromise: Promise<Database> | null = null;
 
@@ -22,22 +22,22 @@ const connectionOptions: DatabaseOptions = {
     synchronize: true,
     logging: false,
     isClient: true,
-    persist: (modelId, entityId, syncContainer, extraData) => post("/api/db/persist", {
+    persist: (modelId, entityId, syncContainer, extraData) => fetcher.post("/api/db/persist", {
         modelId,
         entityId,
         syncContainer,
         extraData
-    }),
-    query: (lastQueryDate, queryOptions, extraData) => post("/api/db/query", {
+    }).then(r => r.data),
+    query: (lastQueryDate, queryOptions, extraData) => fetcher.post("/api/db/query", {
         lastQueryDate: lastQueryDate.toISOString(),
         queryOptions: queryOptions as unknown as JSONValue,
         extraData
-    }),
-    remove: (modelId, entityId, extraData) => post('/api/db/remove', {
+    }).then(r => r.data),
+    remove: (modelId, entityId, extraData) => fetcher.post('/api/db/remove', {
         modelId,
         entityId,
         extraData
-    }),
+    }).then(r => r.data),
 };
 
 export function prepareBrowserConnection() {

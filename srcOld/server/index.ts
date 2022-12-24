@@ -13,7 +13,7 @@ import "../shared/model/Person"
 import {UserManager} from "cordova-sites-user-management/dist/server";
 import {SetupUserManagement1000000001000} from "cordova-sites-user-management/dist/shared"
 import {DeleteUserManagement1000000000000} from "cordova-sites-user-management/dist/shared"
-import {MailmanApi} from "./logic/v1/MailmanApi";
+import {MailmanApi} from "../../src/application/mailman/MailmanApi";
 import {PersonInit1000000006000} from "../shared/model/migrations/PersonInit";
 import {MailingListInit1000000007000} from "../shared/model/migrations/MailingListInit";
 import {Data1000000005000} from "./migrations/Data";

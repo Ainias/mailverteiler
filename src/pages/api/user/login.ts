@@ -2,12 +2,13 @@ import {NextApiRequest, NextApiResponse} from 'next';
 import {waitForSyncRepository} from "typeorm-sync";
 import {User} from "../../../application/UserManagement/User";
 import {UserManager} from "../../../application/UserManagement/UserManager";
-import {prepareApi} from "../../../application/helpers/prepareApi";
+import {prepareApi} from "../../../application/helpers/prepare/prepareApi";
 import {Device} from "../../../application/UserManagement/Device";
 
 export type LoginResponseData = {
     success: true;
     user: User
+    accesses: string[]
 } | {
     success: false,
     message: string
@@ -38,9 +39,12 @@ export default prepareApi(async (req: NextApiRequest, res: NextApiResponse<Login
 
     if (token) {
         userManager.setToken(token, req, res);
+        const accesses = (await userManager.findAccessesForUserId(user.id)).map(a => a.name);
+
         res.status(200).json({
             success: true,
-            user
+            user,
+            accesses
         });
     } else {
         userManager.deleteToken(req, res);

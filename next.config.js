@@ -58,6 +58,10 @@ const nextConfig = {
         ignoreDuringBuilds: true,
     },
     poweredByHeader: false,
+    experimental: {
+        workerThreads: false,
+        cpus: 1
+    },
 };
 
 module.exports = nextTranslate(nextConfig);

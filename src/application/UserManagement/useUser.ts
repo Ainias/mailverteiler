@@ -1,30 +1,21 @@
+import {useUserData} from "./useUserData";
 import {User} from "./User";
-import {createZustand} from "../helpers/createZustand";
 
-const initialState = {
-    user: undefined as User|undefined,
-};
+let serverUser: User|undefined
 
-type SetState = (
-    newState: UserState | Partial<UserState> | ((state: UserState) => UserState | Partial<UserState>),
-    replace?: boolean
-) => void;
-type GetState = () => Readonly<UserState>;
+export function useUser() {
+    if (typeof window === 'undefined') {
+        // server
+        console.log("LOG-d returning from server")
+        return serverUser;
+    } else {
+        // browser
+        console.log("LOG-d returning from client")
+        return useUserData(s => s.user);
+    }
+}
 
-const actionsGenerator = ((set: SetState, get: GetState) => ({
-    setUserData(user: User|undefined) {
-        set({user})
-    },
-    clear() {
-        set({...actionsGenerator(set, get)}, true);
-    },
-}));
 
-export type UserState = typeof initialState & ReturnType<typeof actionsGenerator>;
-export const useUser = createZustand<UserState>((set, get) => ({
-    ...initialState,
-    ...actionsGenerator(set, get),
-}), {
-    name: "user",
-    version: 0,
-});
+export function setServerUser(user: User){
+    serverUser=user;
+}

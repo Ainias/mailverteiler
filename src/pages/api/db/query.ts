@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { queryFromClient } from 'typeorm-sync/dist';
-import {prepareApi} from "../../../application/helpers/prepareApi";
+import {prepareApi} from "../../../application/helpers/prepare/prepareApi";
 
 type PromiseResolvedType<T> = T extends Promise<infer R> ? R : never;
 type ReturnedPromiseResolvedType<T extends (...args: any) => any> = PromiseResolvedType<ReturnType<T>>;

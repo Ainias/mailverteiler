@@ -1,5 +1,5 @@
 import {SyncController} from "cordova-sites-user-management/dist/server/v1/controller/SyncController";
-import {MailmanApi} from "../MailmanApi";
+import {MailmanApi} from "../../../../../src/application/mailman/MailmanApi";
 import {Person} from "../../../../shared/model/Person";
 import {Helper} from "js-helper/dist/shared/Helper";
 import {In, IsNull, Not, QueryBuilder, SelectQueryBuilder} from "typeorm/index";

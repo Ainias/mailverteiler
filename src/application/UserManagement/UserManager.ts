@@ -8,6 +8,7 @@ import {deleteCookie, setCookie} from "cookies-next";
 import {NextApiRequest, NextApiResponse} from "next";
 import {RoleManager} from "./RoleManager";
 import {Access} from "./Access";
+import {IncomingMessage, ServerResponse} from "http";
 
 const defaultUserManagerConfig = {
     saltLength: 12,
@@ -139,7 +140,7 @@ class UserManager {
         return [token,device] as const;
     }
 
-    setToken(token: string, req: NextApiRequest, res: NextApiResponse){
+    setToken(token: string, req: NextApiRequest|IncomingMessage, res: NextApiResponse|ServerResponse){
         setCookie("token", token, {req, res, httpOnly: true, maxAge: 7 * 24 * 60 * 60, secure: process.env.NODE_ENV !== "development"})
     }
 

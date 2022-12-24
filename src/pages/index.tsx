@@ -5,7 +5,7 @@ import {MultipleInitialResult, waitForSyncRepository} from "typeorm-sync";
 import {User} from "../application/UserManagement/User";
 import {useInitialResult} from "typeorm-sync-nextjs";
 import {Button, LoadingCircle, Text} from "react-bootstrap-mobile";
-import {prepareInitialProps} from "../application/helpers/prepareInitialProps";
+import {prepareInitialProps} from "../application/helpers/prepare/prepareInitialProps";
 
 export type IndexProps = { initialUsers: MultipleInitialResult<typeof User> };
 

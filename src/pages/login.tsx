@@ -1,9 +1,9 @@
 import React, {useCallback, useState} from 'react';
 import {NextPage} from "next";
 import {Block, Button, Input, Text} from "react-bootstrap-mobile";
-import {get, post} from "../application/fetcher";
 import {LoginResponseData} from "./api/user/login";
-import {useUser} from "../application/UserManagement/useUser";
+import {useUserData} from "../application/UserManagement/useUserData";
+import {fetcher} from "../application/fetcher";
 
 export type LoginProps = {};
 
@@ -11,8 +11,9 @@ function Login({}: LoginProps) {
     // Variables
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const setUserData = useUser(s => s.setUserData);
-    const user = useUser(s => s.user);
+    const setUser = useUserData(s => s.setUser);
+    const setAccesses = useUserData(s => s.setAccesses);
+    const user = useUserData(s => s.user);
 
 
     // Refs
@@ -23,18 +24,19 @@ function Login({}: LoginProps) {
 
     // Callbacks
     const login = useCallback(async () => {
-        const res = await post<LoginResponseData>("/api/user/login", {email, password})
-        if (res.success) {
-            setUserData(res.user);
+        const res = await fetcher.post<LoginResponseData>("/api/user/login", {email, password})
+        if (res.data.success) {
+            setUser(res.data.user);
+            setAccesses(res.data.accesses);
         } else {
             console.log("LOG-d error", res);
-            setUserData(undefined);
+            setUser(undefined);
         }
     }, [email, password]);
 
     const testLogin = useCallback(async () => {
-        const res = await get("/api/test")
-        console.log("LOG-d result", res);
+        const res = await fetcher.get("/api/test")
+        console.log("LOG-d result", res.data);
     }, [email, password]);
 
     // Effects
