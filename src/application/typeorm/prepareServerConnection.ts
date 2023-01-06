@@ -14,7 +14,7 @@ const getConnectionOptions = () =>
         username: process.env.DB_USER,
         password: process.env.DB_PASSWORD,
         database: process.env.DB_DB,
-        synchronize: true,
+        synchronize: false,
         logging: false,
     } as DatabaseOptions);
 
